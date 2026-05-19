@@ -1,0 +1,275 @@
+import { useEffect, useState } from 'react'
+import { MessageCircle, Heart, Zap, Meh, Save, Smartphone } from 'lucide-react'
+import api from '@/services/api'
+import { useAuthStore } from '@/store/auth'
+import type { TucoTone } from '@/types'
+import toast from 'react-hot-toast'
+import clsx from 'clsx'
+
+const TONES: { value: TucoTone; label: string; desc: string; emoji: string; icon: React.ReactNode }[] = [
+  {
+    value: 'AMOROSO',
+    label: 'Amoroso',
+    desc: 'Carinhoso, encorajador e celebra cada conquista. O melhor amigo financeiro.',
+    emoji: '🥰',
+    icon: <Heart size={20} />,
+  },
+  {
+    value: 'NEUTRO',
+    label: 'Neutro',
+    desc: 'Direto ao ponto, levemente bem-humorado. Equilíbrio perfeito entre humor e seriedade.',
+    emoji: '😎',
+    icon: <Meh size={20} />,
+  },
+  {
+    value: 'AGRESSIVO',
+    label: 'Sem filtro',
+    desc: 'Sarcástico, direto e sem papas na língua. A verdade dói mas ajuda.',
+    emoji: '🔥',
+    icon: <Zap size={20} />,
+  },
+]
+
+const ZOEIRA_LEVELS = [
+  { value: 1, label: 'Suave', desc: 'Comentários gentis', emoji: '😊' },
+  { value: 2, label: 'Médio', desc: 'Piadas contextuais', emoji: '😄' },
+  { value: 3, label: 'Pesado', desc: 'Zoeira total, sem perdão', emoji: '😂' },
+]
+
+export default function TucoSettings() {
+  const { user, updateUser } = useAuthStore()
+  const [tone, setTone] = useState<TucoTone>('NEUTRO')
+  const [zoeira, setZoeira] = useState(2)
+  const [name, setName] = useState('Tuco')
+  const [active, setActive] = useState(true)
+  const [phone, setPhone] = useState(user?.whatsapp_phone ?? '')
+  const [loading, setLoading] = useState(false)
+  const [savingPhone, setSavingPhone] = useState(false)
+  const [previewMsg, setPreviewMsg] = useState('')
+  const [loadingPreview, setLoadingPreview] = useState(false)
+
+  useEffect(() => { loadSettings() }, [])
+
+  async function loadSettings() {
+    try {
+      const res = await api.get('/dashboard/tuco-settings')
+      setTone(res.data.tone)
+      setZoeira(res.data.zoeira_level)
+      setName(res.data.tuco_name)
+      setActive(res.data.active)
+    } catch {/* usa defaults */}
+  }
+
+  async function saveSettings() {
+    setLoading(true)
+    try {
+      await api.put('/dashboard/tuco-settings', {
+        tone, zoeira_level: zoeira, tuco_name: name, active,
+      })
+      toast.success('Configurações do Tuco salvas! ✅')
+    } catch {
+      toast.error('Erro ao salvar')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function savePhone() {
+    setSavingPhone(true)
+    try {
+      const res = await api.put('/auth/me', { whatsapp_phone: phone || null })
+      updateUser(res.data)
+      toast.success('Número WhatsApp atualizado! 📱')
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail ?? 'Erro ao salvar número')
+    } finally {
+      setSavingPhone(false)
+    }
+  }
+
+  async function generatePreview() {
+    setLoadingPreview(true)
+    try {
+      // Simula uma mensagem de preview
+      const examples = [
+        'Cerveja: 45',
+        'iFood: 89',
+        'Academia: 120',
+        'Gasolina: 200',
+        'Supermercado: 350',
+      ]
+      const msg = examples[Math.floor(Math.random() * examples.length)]
+      toast(`Simulando: "${msg}"`, { icon: '💬' })
+      // Aqui poderia chamar um endpoint /api/tuco/preview
+      await new Promise((r) => setTimeout(r, 800))
+      const previews: Record<TucoTone, Record<number, string[]>> = {
+        AMOROSO: {
+          1: [`Anotado com carinho! 💚`, `Registrado! Você tá indo bem! 🌟`, `Guardado! Orgulho de você! 💪`],
+          2: [`Anotado! ${name} tá de olho no seu bolso! 💚`, `Registrado! Vai com calma né? 😄`],
+          3: [`ANOTADO! Mas hein... gastando isso tudo? 😂 ${name} te ama mesmo assim! 💚`],
+        },
+        NEUTRO: {
+          1: [`Anotado!`, `Registrado.`, `Ok, guardei aqui.`],
+          2: [`Anotado! Tô de olho. 😎`, `Registrado! Todo mês é isso né? 😄`],
+          3: [`Anotado! Mais um pro contador chorar. 😂`, `Registrado! Teu bolso agradece... ou não. 😅`],
+        },
+        AGRESSIVO: {
+          1: [`Anotado.`, `Ok.`, `Registrado, chefe.`],
+          2: [`Anotado. De novo. Todo mês. Sério? 😤`, `Registrado. O iFood agradece sua fidelidade. 🛵`],
+          3: [`Outro gasto? Teu fígado vai na frente. 😂`, `Anotado! Mas se tivesse guardado tudo isso... 🤦`],
+        },
+      }
+      const options = previews[tone]?.[zoeira] ?? previews.NEUTRO[2]
+      setPreviewMsg(options[Math.floor(Math.random() * options.length)])
+    } finally {
+      setLoadingPreview(false)
+    }
+  }
+
+  return (
+    <div className="max-w-2xl space-y-6 animate-fade-in">
+      {/* Tom do Tuco */}
+      <div className="card p-6 space-y-4">
+        <div className="flex items-center gap-2 mb-2">
+          <MessageCircle size={20} className="text-brand" />
+          <h3 className="font-bold text-white">Tom do {name}</h3>
+        </div>
+        <div className="grid gap-3">
+          {TONES.map((t) => (
+            <button
+              key={t.value}
+              onClick={() => setTone(t.value)}
+              className={clsx(
+                'flex items-start gap-4 p-4 rounded-xl border text-left transition-all',
+                tone === t.value
+                  ? 'border-brand bg-brand/10'
+                  : 'border-dark-400 hover:border-dark-500 hover:bg-dark-300'
+              )}
+            >
+              <span className="text-2xl">{t.emoji}</span>
+              <div>
+                <p className={`font-semibold ${tone === t.value ? 'text-brand' : 'text-white'}`}>
+                  {t.label}
+                </p>
+                <p className="text-sm text-dark-800 mt-0.5">{t.desc}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Nível de zoeira */}
+      <div className="card p-6 space-y-4">
+        <h3 className="font-bold text-white">Nível de zoeira</h3>
+        <div className="grid grid-cols-3 gap-3">
+          {ZOEIRA_LEVELS.map((z) => (
+            <button
+              key={z.value}
+              onClick={() => setZoeira(z.value)}
+              className={clsx(
+                'p-4 rounded-xl border text-center transition-all',
+                zoeira === z.value
+                  ? 'border-brand bg-brand/10'
+                  : 'border-dark-400 hover:border-dark-500 hover:bg-dark-300'
+              )}
+            >
+              <div className="text-2xl mb-1">{z.emoji}</div>
+              <p className={`text-sm font-semibold ${zoeira === z.value ? 'text-brand' : 'text-white'}`}>
+                {z.label}
+              </p>
+              <p className="text-xs text-dark-800">{z.desc}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Nome do personagem */}
+      <div className="card p-6 space-y-4">
+        <h3 className="font-bold text-white">Nome do personagem</h3>
+        <div>
+          <label className="label">Como chamar seu assistente?</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Tuco"
+            maxLength={50}
+            className="input-field"
+          />
+          <p className="text-xs text-dark-700 mt-1.5">
+            Padrão: Tuco. Mas pode ser "Bolso", "Pix", "Contador"... vai na criatividade!
+          </p>
+        </div>
+
+        {/* Preview */}
+        <div className="bg-dark-300 rounded-xl p-4">
+          <p className="text-xs text-dark-800 mb-3 font-medium uppercase tracking-wider">Preview de mensagem</p>
+          <button
+            onClick={generatePreview}
+            disabled={loadingPreview}
+            className="text-sm text-brand hover:text-brand-300 transition-colors mb-3"
+          >
+            {loadingPreview ? 'Gerando...' : '↻ Gerar exemplo'}
+          </button>
+          {previewMsg && (
+            <div className="bg-dark-200 rounded-xl p-3 border border-dark-400 animate-fade-in">
+              <div className="flex items-start gap-2">
+                <div className="w-7 h-7 bg-brand rounded-full flex items-center justify-center text-black text-xs font-bold shrink-0">
+                  {name.charAt(0)}
+                </div>
+                <p className="text-sm text-white">{previewMsg}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* WhatsApp */}
+      <div className="card p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <Smartphone size={20} className="text-brand" />
+          <h3 className="font-bold text-white">Vincular WhatsApp</h3>
+        </div>
+        <p className="text-sm text-dark-800">
+          Cadastre seu número para usar o {name} pelo WhatsApp.
+          Depois de salvar, mande qualquer mensagem para o número do Tuco para ativar.
+        </p>
+        <div className="flex gap-3">
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="5511999999999 (sem + ou espaços)"
+            className="input-field flex-1"
+          />
+          <button
+            onClick={savePhone}
+            disabled={savingPhone}
+            className="btn-primary px-5 shrink-0"
+          >
+            {savingPhone ? '...' : 'Salvar'}
+          </button>
+        </div>
+        <div className="bg-dark-300 rounded-xl p-3 text-xs text-dark-800">
+          <p className="font-medium text-white mb-1">Como usar pelo WhatsApp:</p>
+          <ul className="space-y-1 list-disc pl-4">
+            <li>Registrar gasto: <span className="text-brand font-mono">Mercado: 150</span></li>
+            <li>Ver hoje: <span className="text-brand font-mono">quanto gastei hoje?</span></li>
+            <li>Resumo: <span className="text-brand font-mono">resumo do mês</span></li>
+            <li>Saldo: <span className="text-brand font-mono">qual meu saldo?</span></li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Save */}
+      <button
+        onClick={saveSettings}
+        disabled={loading}
+        className="btn-primary w-full flex items-center justify-center gap-2 py-3"
+      >
+        <Save size={18} />
+        {loading ? 'Salvando...' : `Salvar configurações do ${name}`}
+      </button>
+    </div>
+  )
+}

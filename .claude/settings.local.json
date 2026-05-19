@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\contas_do_mes_back\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(ConvertTo-Csv -NoTypeInformation)",
+      "Bash(Out-String)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\contas_do_mes_back\" -Recurse -Force | Select-Object FullName | ForEach-Object {$_.FullName} | Sort-Object)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(Get-ChildItem -Path \"C:\\\\contas_do_mes_back\" -Filter \".env*\" -Force)",
+      "PowerShell(Test-NetConnection -ComputerName localhost -Port 5432)",
+      "PowerShell(Get-ChildItem -Path \"$env:LOCALAPPDATA\\\\Microsoft\\\\WinGet\\\\Packages\" -Recurse -Filter \"ngrok.exe\" -ErrorAction SilentlyContinue | Select-Object FullName)"
+    ]
+  }
+}
