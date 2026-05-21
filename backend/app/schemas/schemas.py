@@ -226,6 +226,7 @@ class AccountsSummary(BaseModel):
     total_paid: float
     resting_value: float
     late_count: int
+    total_expenses: float = 0.0
 
 
 class ResumeOut(BaseModel):

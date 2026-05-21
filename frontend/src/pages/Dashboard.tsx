@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   TrendingUp, TrendingDown, Wallet, AlertTriangle,
-  CreditCard, BarChart3, ArrowRight, CheckCircle,
+  CreditCard, BarChart3, ArrowRight, CheckCircle, ShoppingBag,
 } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import api from '@/services/api'
@@ -12,7 +12,7 @@ import { formatCurrency, MONTH_NAMES } from '@/types'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
 
-const PIE_COLORS = ['#7EC243', '#3b82f6', '#f59e0b']
+const PIE_COLORS = ['#7EC243', '#3b82f6', '#f59e0b', '#a855f7']
 
 export default function Dashboard() {
   const user = useAuthStore((s) => s.user)
@@ -88,6 +88,7 @@ export default function Dashboard() {
     { name: 'Fixas', value: summary.total_monthly },
     { name: 'Dinâmicas', value: summary.total_dynamic },
     { name: 'Parcelamentos', value: summary.total_installment },
+    { name: 'Gastos Avulsos', value: summary.total_expenses },
   ].filter((d) => d.value > 0) : []
 
   const paidPercent = summary && summary.total_value > 0
@@ -128,10 +129,10 @@ export default function Dashboard() {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           label="Total do mês"
-          value={formatCurrency(summary?.total_value ?? 0)}
+          value={formatCurrency((summary?.total_value ?? 0) + (summary?.total_expenses ?? 0))}
           icon={<Wallet size={20} />}
           color="text-white"
         />
@@ -147,6 +148,12 @@ export default function Dashboard() {
           value={formatCurrency(summary?.resting_value ?? 0)}
           icon={<TrendingDown size={20} />}
           color="text-red-400"
+        />
+        <StatCard
+          label="Gastos avulsos"
+          value={formatCurrency(summary?.total_expenses ?? 0)}
+          icon={<ShoppingBag size={20} />}
+          color="text-purple-400"
         />
         <StatCard
           label="Em atraso"
@@ -170,10 +177,11 @@ export default function Dashboard() {
               style={{ width: `${paidPercent}%` }}
             />
           </div>
-          <div className="grid grid-cols-3 gap-3 pt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
             <MiniStat label="Fixas" value={formatCurrency(summary?.total_monthly ?? 0)} color="bg-brand" />
             <MiniStat label="Dinâmicas" value={formatCurrency(summary?.total_dynamic ?? 0)} color="bg-blue-500" />
             <MiniStat label="Parcelamentos" value={formatCurrency(summary?.total_installment ?? 0)} color="bg-yellow-500" />
+            <MiniStat label="Gastos" value={formatCurrency(summary?.total_expenses ?? 0)} color="bg-purple-500" />
           </div>
         </div>
 

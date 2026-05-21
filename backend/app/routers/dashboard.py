@@ -4,7 +4,7 @@ from typing import List
 from datetime import datetime
 from app.database import get_db
 from app.middleware.auth import get_current_user
-from app.models.models import User, MainAccount, AccountType, PaidStatus, AccountsResume, Payment
+from app.models.models import User, MainAccount, AccountType, PaidStatus, AccountsResume, Payment, Expense
 from app.schemas.schemas import AccountsSummary, ResumeOut
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -43,6 +43,13 @@ def get_summary(
 
     late_count = sum(1 for a in accounts if a.is_late)
 
+    now = datetime.utcnow()
+    total_expenses = db.query(Expense).filter(
+        Expense.user_id == current_user.id,
+        Expense.month == now.month,
+        Expense.year == now.year,
+    ).with_entities(__import__('sqlalchemy').func.sum(Expense.amount)).scalar() or 0.0
+
     return AccountsSummary(
         total_monthly=round(total_monthly, 2),
         total_dynamic=round(total_dynamic, 2),
@@ -51,6 +58,7 @@ def get_summary(
         total_paid=round(total_paid, 2),
         resting_value=round(max(0.0, total_value - total_paid), 2),
         late_count=late_count,
+        total_expenses=round(float(total_expenses), 2),
     )
 
 

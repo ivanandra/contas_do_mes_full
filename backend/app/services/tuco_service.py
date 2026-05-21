@@ -218,7 +218,9 @@ Dados: {json.dumps(data, ensure_ascii=False, default=str)}
 
 Gere uma resposta informativa com sua personalidade.
 Use formatação markdown (negrito, títulos, listas) para organizar bem os dados.
-Português brasileiro informal. Use emojis. Máximo 10 linhas."""
+Inclua TODOS os dados recebidos, sem omitir nenhum item.
+Português brasileiro informal. Use emojis.
+No final, adicione apenas 1 linha curta de humor/zoeira do Tuco sobre os dados."""
 
     try:
         client = _get_client()

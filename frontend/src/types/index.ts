@@ -101,6 +101,7 @@ export interface AccountsSummary {
   total_paid: number
   resting_value: number
   late_count: number
+  total_expenses: number
 }
 
 export interface MonthResume {
