@@ -27,30 +27,15 @@ def _get_tuco_settings(db: Session, user_id: str) -> TucoSettings:
 
 
 TONE_DESCRIPTIONS = {
-    "AMOROSO": "carinhoso, afetuoso e encorajador. Trata o usuário com muito carinho e comemotra cada conquista.",
-    "NEUTRO": "amigável, direto e levemente bem-humorado. Equilibrado entre seriedade e humor.",
-    "AGRESSIVO": "sarcástico, sem papas na língua e direto ao ponto. Fala a verdade sem rodeios.",
+    "AMOROSO": "AMOROSO — genuinamente carinhoso, torce pelo usuário, celebra cada conquista como se fosse sua.",
+    "NEUTRO": "NEUTRO — parceiro direto e bem-humorado, como um amigo que entende de grana e não tem medo de falar a verdade.",
+    "AGRESSIVO": "AGRESSIVO — sem papas na língua, sincero até doer, fala a real mesmo que incomode.",
 }
 
 ZOEIRA_DESCRIPTIONS = {
-    1: "Faça um comentário gentil e suave, sem exageros.",
-    2: "Adicione uma observação engraçada ou leve piada contextual.",
-    3: "Seja bem zoeiro e sarcástico! Como um amigo muito sem-filtro.",
-}
-
-CATEGORY_ZOEIRA = {
-    "cerveja": ["Tá bebendo demais não? 🍺", "O fígado agradece... não. 🍻", "Cervejeiro raiz!"],
-    "bar": ["Mais um happy hour né? 🥃", "Bar te ama mais que você imagina. 💸"],
-    "delivery": ["Rei/Rainha do iFood! 📱", "O motoboy já sabe seu endereço de cor. 🛵"],
-    "ifood": ["Cozinhar é para os fortes né? 😂", "O app de delivery fica feliz toda vez que você abre. 📱"],
-    "farmácia": ["Tá fraco? 💊", "Saúde em dia... ou remédio de ressaca? 🤔"],
-    "academia": ["Academia E delivery? Filosofia única! 💪🍕", "O personal vai ficar orgulhoso... talvez. 🏋️"],
-    "roupa": ["Mais roupa? O guarda-roupa pediu socorro! 👗", "Armário cheio, carteira vazia. 😅"],
-    "supermercado": ["Mercado todo mês mesmo, né? 🛒", "Básico da vida!"],
-    "gasolina": ["O carro agradece! ⛽", "Tá rodando muito ou em círculos? 🚗"],
-    "luz": ["Deixou a luz acesa de novo? 💡", "Energia elétrica: o básico civilizado. ⚡"],
-    "aluguel": ["O senhorio mais feliz do Brasil! 🏠", "Casa é vida!"],
-    "internet": ["Internet: necessidade básica moderna. 📡", "Sem internet não dá né? 🌐"],
+    1: "zoeira leve — só quando for inevitável, sem exageros.",
+    2: "zoeira moderada — piadas contextuais e comentários afiados na hora certa.",
+    3: "zoeira pesada — sarcasmo, provocação e zero filtro. Amigo sem-vergonha mesmo.",
 }
 
 
@@ -65,6 +50,7 @@ async def interpret_message(message: str, user: User, db: Session) -> dict:
     dynamic_names = [a.account_name for a in accounts if a.account_type == AccountType.DYNAMIC]
 
     prompt = f"""Você é um assistente financeiro brasileiro. Analise esta mensagem e extraia a intenção.
+O usuário pode cometer erros de digitação — interprete a intenção, não a ortografia.
 
 Mensagem do usuário: "{message}"
 
@@ -112,13 +98,17 @@ REGRAS PARA DETERMINAR O INTENT (só se passou pela verificação de segurança)
 5. CONSULTA — usuário quer saber algo sobre suas finanças.
    Exemplos: "quanto gastei hoje?", "qual meu saldo?", "resumo do mês"
 
-6. DESCONHECIDO — não foi possível identificar a intenção financeira.
+6. CORRECAO — usuário quer corrigir o valor de um lançamento já feito.
+   Palavras-chave: "errei", "corrigi", "na verdade foi", "na verdade era", "muda o valor", "valor errado", "corrija".
+   Exemplos: "errei, o mercado na verdade foi 224", "corrigi o uber, era 45", "muda o valor da farmácia pra 80"
+
+7. DESCONHECIDO — não foi possível identificar a intenção financeira.
 
 ---
 
 Responda APENAS com JSON válido (sem markdown, sem explicações):
 {{
-  "intent": "NOVO_GASTO" | "GASTO_AVULSO" | "AMBIGUO" | "PAGAMENTO" | "CONSULTA" | "INAPROPRIADO" | "FORA_DO_ESCOPO" | "DESCONHECIDO",
+  "intent": "NOVO_GASTO" | "GASTO_AVULSO" | "AMBIGUO" | "PAGAMENTO" | "CONSULTA" | "CORRECAO" | "INAPROPRIADO" | "FORA_DO_ESCOPO" | "DESCONHECIDO",
   "expense": {{
     "category": "nome da categoria ou conta",
     "amount": 0.00,
@@ -132,6 +122,10 @@ Responda APENAS com JSON válido (sem markdown, sem explicações):
   "query": {{
     "type": "HOJE" | "SEMANA" | "MES" | "CATEGORIA" | "SALDO" | "LISTA",
     "category": null
+  }},
+  "correcao": {{
+    "category": "nome da categoria ou conta a corrigir",
+    "new_amount": 0.00
   }}
 }}"""
 
@@ -168,23 +162,17 @@ async def generate_tuco_response(
     zoeira_desc = ZOEIRA_DESCRIPTIONS.get(tuco_cfg.zoeira_level, ZOEIRA_DESCRIPTIONS[2])
     user_nickname = tuco_cfg.tuco_name
 
-    prompt = f"""Você é Tuco, um assistente financeiro pessoal.
-Personalidade: {tone_desc}
-Nível de zoeira: {tuco_cfg.zoeira_level}/3 — {zoeira_desc}
-Chame o usuário de "{user_nickname}" nas suas respostas.
+    prompt = f"""Você é o Tuco — assistente financeiro com personalidade autêntica.
+Tom: {tone_desc}
+Zoeira: {tuco_cfg.zoeira_level}/3 — {zoeira_desc}
+Chame o usuário de "{user_nickname}".
 
-Ação realizada: {action}
-Dados: {json.dumps(result_data, ensure_ascii=False)}
-Erro: {"Sim" if error else "Não"}
+O que aconteceu: {action}
+Contexto: {json.dumps(result_data, ensure_ascii=False)}
+{"⚠️ Ocorreu um erro." if error else ""}
 
-Regras:
-- Resposta CURTÍSSIMA: 1 linha, 2 no máximo
-- Português brasileiro informal
-- 1 emoji só se encaixar bem
-- Se for gasto de lazer/bar/delivery, uma pitada de zoeira
-- Não mencione "Claude", "IA" ou "assistente"
-
-Responda apenas com o texto da mensagem, sem aspas:"""
+Reaja como o Tuco reagiria — máximo 2 linhas, português informal, 1 emoji se fizer sentido.
+Nunca mencione "Claude", "IA" ou "assistente". Só o texto, sem aspas:"""
 
     try:
         client = _get_client()
@@ -205,15 +193,15 @@ Responda apenas com o texto da mensagem, sem aspas:"""
 async def generate_query_response(query_type: str, data: dict, user: User, db: Session) -> str:
     tuco_cfg = _get_tuco_settings(db, user.id)
     tone_desc = TONE_DESCRIPTIONS.get(tuco_cfg.tone.value, TONE_DESCRIPTIONS["NEUTRO"])
+    zoeira_desc = ZOEIRA_DESCRIPTIONS.get(tuco_cfg.zoeira_level, ZOEIRA_DESCRIPTIONS[2])
     user_nickname = tuco_cfg.tuco_name
 
-    prompt = f"""Você é Tuco, assistente financeiro pessoal com muita personalidade.
-Personalidade: {tone_desc}
-Nível de zoeira: {tuco_cfg.zoeira_level}/3
+    prompt = f"""Você é o Tuco — assistente financeiro com personalidade autêntica.
+Tom: {tone_desc}
+Zoeira: {tuco_cfg.zoeira_level}/3 — {zoeira_desc}
 Chame o usuário de "{user_nickname}".
 
-O usuário perguntou sobre suas finanças.
-Tipo de consulta: {query_type}
+O usuário pediu: {query_type}
 Dados: {json.dumps(data, ensure_ascii=False, default=str)}
 
 Gere uma resposta informativa com sua personalidade.

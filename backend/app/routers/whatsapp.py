@@ -36,6 +36,13 @@ HELP_MSG = """👋 Eu sou o *Tuco*, seu assistente financeiro!
 • `qual meu saldo?`
 • `minhas contas`
 
+*Correção de valor:*
+• `errei, o Mercado na verdade foi 224`
+• `corrigi o uber, era 45`
+
+*Abrir o app:*
+• `Tuco, abre o app pra mim`
+
 💡 _Sempre que informar o método (pix, dinheiro, débito, crédito) eu registro direto. Se não informar e existir uma conta com esse nome, te pergunto antes._"""
 
 UNKNOWN_MSG = "Hmm, não entendi bem... 🤔 Tenta assim:\n`Mercado: 150` ou pergunta `quanto gastei hoje?`"
@@ -82,6 +89,23 @@ async def process_whatsapp_message(phone: str, body: str, db: Session, provider:
             log.processed = True
             db.commit()
             await send_whatsapp_message(phone, HELP_MSG, provider)
+            return
+
+        # Pré-check: abrir o app
+        _app_triggers = [
+            "abre o app", "abrir o app", "link do app", "link do aplicativo",
+            "abre o aplicativo", "quero entrar no app", "acessa o app",
+            "me manda o link", "link do sistema",
+        ]
+        if any(t in _body for t in _app_triggers):
+            log.intent = "OPEN_APP"
+            log.processed = True
+            db.commit()
+            await send_whatsapp_message(
+                phone,
+                f"Aqui está o link do app 👇\n{settings.FRONTEND_URL}",
+                provider,
+            )
             return
 
         # Pré-check de consultas óbvias — evita chamar Claude pra coisas simples
@@ -225,7 +249,6 @@ async def process_whatsapp_message(phone: str, body: str, db: Session, provider:
             expense_data = interpretation.get("expense", {}) or {}
             amount = expense_data.get("amount", 0)
             category = expense_data.get("category", "Gasto")
-            description = expense_data.get("description", body)
 
             if amount <= 0:
                 response_text = "Não consegui identificar o valor. Tenta assim: `Mercado: 150` 😅"
@@ -273,7 +296,7 @@ async def process_whatsapp_message(phone: str, body: str, db: Session, provider:
                     item = DynamicShopping(
                         dynamic_account_id=target_account.dynamic_account.id,
                         value=amount,
-                        description=description or category,
+                        description=category,
                     )
                     db.add(item)
                     da = target_account.dynamic_account
@@ -303,7 +326,6 @@ async def process_whatsapp_message(phone: str, body: str, db: Session, provider:
             expense_data = interpretation.get("expense", {}) or {}
             amount = expense_data.get("amount", 0)
             category = expense_data.get("category", "Gasto")
-            description = expense_data.get("description", body)
             method = expense_data.get("method")
 
             if amount <= 0:
@@ -312,7 +334,7 @@ async def process_whatsapp_message(phone: str, body: str, db: Session, provider:
                 now = datetime.utcnow()
                 expense = Expense(
                     user_id=user.id,
-                    description=description or category,
+                    description=category,
                     amount=amount,
                     method=method,
                     category=category,
@@ -467,6 +489,107 @@ async def process_whatsapp_message(phone: str, body: str, db: Session, provider:
                 "Sou especialista em finanças pessoais — contas, gastos, saldo.\n"
                 "Manda um `resumo do mês` se quiser ver como tá o dinheiro!"
             )
+
+        # ── Correção de valor ─────────────────────────────────────────────────
+        elif intent == "CORRECAO":
+            correcao = interpretation.get("correcao", {}) or {}
+            category = correcao.get("category", "")
+            new_amount = float(correcao.get("new_amount") or 0)
+
+            if not category or new_amount <= 0:
+                response_text = "Não entendi qual lançamento corrigir. Tenta assim: `errei, o Mercado na verdade foi 224` 🙏"
+            else:
+                corrected = False
+                old_amount = 0.0
+                label = category
+
+                # 1. Busca em DynamicShopping (mais recente)
+                _da_ids = [
+                    a.dynamic_account.id for a in
+                    db.query(MainAccount).filter(MainAccount.user_id == user.id).all()
+                    if a.dynamic_account
+                ]
+                if _da_ids:
+                    shopping = (
+                        db.query(DynamicShopping)
+                        .filter(
+                            DynamicShopping.dynamic_account_id.in_(_da_ids),
+                            DynamicShopping.description.ilike(f"%{category}%"),
+                        )
+                        .order_by(DynamicShopping.created_at.desc())
+                        .first()
+                    )
+                    if not shopping:
+                        # tenta pelo nome da conta dinâmica
+                        for acc in db.query(MainAccount).filter(
+                            MainAccount.user_id == user.id,
+                            MainAccount.account_type == AccountType.DYNAMIC,
+                        ).all():
+                            if category.lower() in acc.account_name.lower() or acc.account_name.lower() in category.lower():
+                                shopping = (
+                                    db.query(DynamicShopping)
+                                    .filter(DynamicShopping.dynamic_account_id == acc.dynamic_account.id)
+                                    .order_by(DynamicShopping.created_at.desc())
+                                    .first()
+                                )
+                                if shopping:
+                                    break
+
+                    if shopping:
+                        old_amount = shopping.value
+                        da = db.query(DynamicAccount).filter(DynamicAccount.id == shopping.dynamic_account_id).first()
+                        if da:
+                            da.current_value = round(da.current_value - old_amount + new_amount, 2)
+                        shopping.value = new_amount
+                        db.commit()
+                        corrected = True
+                        label = shopping.description or category
+
+                # 2. Busca em Expense
+                if not corrected:
+                    expense = (
+                        db.query(Expense)
+                        .filter(
+                            Expense.user_id == user.id,
+                            Expense.category.ilike(f"%{category}%") |
+                            Expense.description.ilike(f"%{category}%"),
+                        )
+                        .order_by(Expense.expense_date.desc())
+                        .first()
+                    )
+                    if expense:
+                        old_amount = expense.amount
+                        expense.amount = new_amount
+                        db.commit()
+                        corrected = True
+                        label = expense.description or category
+
+                # 3. Busca em Payment
+                if not corrected:
+                    payment_rec = (
+                        db.query(Payment)
+                        .filter(
+                            Payment.user_id == user.id,
+                            Payment.account_name.ilike(f"%{category}%"),
+                        )
+                        .order_by(Payment.payment_date.desc())
+                        .first()
+                    )
+                    if payment_rec:
+                        old_amount = payment_rec.value_paid
+                        payment_rec.value_paid = new_amount
+                        db.commit()
+                        corrected = True
+                        label = payment_rec.account_name or category
+
+                if corrected:
+                    response_text = await generate_tuco_response(
+                        f"Corrigiu valor de {label}: R$ {old_amount:.2f} → R$ {new_amount:.2f}",
+                        {"item": label, "valor_antigo": old_amount, "valor_novo": new_amount},
+                        user, db
+                    )
+                else:
+                    response_text = f"Não encontrei nenhum lançamento recente de *{category}* pra corrigir. Confere o nome e tenta de novo 🔍"
 
         else:
             response_text = UNKNOWN_MSG
