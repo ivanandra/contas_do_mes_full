@@ -9,7 +9,19 @@
       "mcp__Claude_Preview__preview_start",
       "Bash(Get-ChildItem -Path \"C:\\\\contas_do_mes_back\" -Filter \".env*\" -Force)",
       "PowerShell(Test-NetConnection -ComputerName localhost -Port 5432)",
-      "PowerShell(Get-ChildItem -Path \"$env:LOCALAPPDATA\\\\Microsoft\\\\WinGet\\\\Packages\" -Recurse -Filter \"ngrok.exe\" -ErrorAction SilentlyContinue | Select-Object FullName)"
+      "PowerShell(Get-ChildItem -Path \"$env:LOCALAPPDATA\\\\Microsoft\\\\WinGet\\\\Packages\" -Recurse -Filter \"ngrok.exe\" -ErrorAction SilentlyContinue | Select-Object FullName)",
+      "Bash(python -c ' *)",
+      "Bash(python -m py_compile backend/app/models/models.py backend/app/schemas/schemas.py backend/app/routers/expenses.py backend/app/routers/whatsapp.py backend/app/services/tuco_service.py backend/app/main.py)",
+      "Bash(python -m py_compile backend/app/models/models.py backend/app/services/tuco_service.py)",
+      "Bash(python -m py_compile backend/app/services/tuco_service.py)",
+      "Bash(python -m py_compile backend/app/services/tuco_service.py backend/app/routers/whatsapp.py)",
+      "Bash(taskkill /F /FI \"WINDOWTITLE eq Backend*\" /T)",
+      "Bash(taskkill /F /FI \"WINDOWTITLE eq Frontend*\" /T)",
+      "PowerShell(Start-Process cmd -ArgumentList '/k', 'cd /d C:\\\\contas_do_mes_full\\\\backend && venv\\\\Scripts\\\\activate && uvicorn app.main:app --reload --port 8000' -WindowStyle Normal)",
+      "PowerShell(Stop-Process -Name \"uvicorn\" -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1; Start-Process cmd -ArgumentList '/k', 'cd /d C:\\\\contas_do_mes_full\\\\backend && venv\\\\Scripts\\\\activate && uvicorn app.main:app --reload --port 8000' -WindowStyle Normal; Start-Sleep -Seconds 4; try { \\(Invoke-WebRequest -Uri 'http://localhost:8000/api/health' -UseBasicParsing -TimeoutSec 5\\).Content } catch { \"Subindo...\" })",
+      "Bash(python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload)",
+      "Bash(curl -s http://localhost:8000/health)",
+      "Bash(curl -s http://localhost:8000/)"
     ]
   }
 }

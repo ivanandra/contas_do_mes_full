@@ -68,6 +68,18 @@ export interface AccountsGrouped {
   installment: Account[]
 }
 
+export interface Expense {
+  id: string
+  description: string
+  amount: number
+  method?: string
+  category?: string
+  expense_date: string
+  month: number
+  year: number
+  notes?: string
+}
+
 export interface Payment {
   id: string
   value_paid: number

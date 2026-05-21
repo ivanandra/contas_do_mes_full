@@ -191,6 +191,31 @@ class PaymentOut(BaseModel):
         from_attributes = True
 
 
+# ─── Expenses (Gastos Avulsos) ───────────────────────────────────────────────
+
+class ExpenseCreate(BaseModel):
+    description: str = Field(..., min_length=1, max_length=255)
+    amount: float = Field(..., gt=0)
+    method: Optional[str] = None       # PIX | DINHEIRO | DEBITO
+    category: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class ExpenseOut(BaseModel):
+    id: str
+    description: str
+    amount: float
+    method: Optional[str]
+    category: Optional[str]
+    expense_date: datetime
+    month: int
+    year: int
+    notes: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
 # ─── Dashboard / Resume ──────────────────────────────────────────────────────
 
 class AccountsSummary(BaseModel):

@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, CreditCard, Receipt, BarChart3,
-  MessageCircle, LogOut, DollarSign,
+  MessageCircle, LogOut, DollarSign, ShoppingBag,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import clsx from 'clsx'
@@ -10,6 +10,7 @@ const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/accounts', icon: CreditCard, label: 'Contas' },
   { to: '/payments', icon: Receipt, label: 'Pagamentos' },
+  { to: '/expenses', icon: ShoppingBag, label: 'Gastos' },
   { to: '/summary', icon: BarChart3, label: 'Histórico' },
   { to: '/tuco', icon: MessageCircle, label: 'Config. Tuco' },
 ]

@@ -40,7 +40,7 @@ export default function TucoSettings() {
   const { user, updateUser } = useAuthStore()
   const [tone, setTone] = useState<TucoTone>('NEUTRO')
   const [zoeira, setZoeira] = useState(2)
-  const [name, setName] = useState('Tuco')
+  const [name, setName] = useState('chefe')
   const [active, setActive] = useState(true)
   const [phone, setPhone] = useState(user?.whatsapp_phone ?? '')
   const [loading, setLoading] = useState(false)
@@ -104,19 +104,19 @@ export default function TucoSettings() {
       await new Promise((r) => setTimeout(r, 800))
       const previews: Record<TucoTone, Record<number, string[]>> = {
         AMOROSO: {
-          1: [`Anotado com carinho! 💚`, `Registrado! Você tá indo bem! 🌟`, `Guardado! Orgulho de você! 💪`],
-          2: [`Anotado! ${name} tá de olho no seu bolso! 💚`, `Registrado! Vai com calma né? 😄`],
-          3: [`ANOTADO! Mas hein... gastando isso tudo? 😂 ${name} te ama mesmo assim! 💚`],
+          1: [`Anotado com carinho, ${name}! 💚`, `Registrado! Você tá indo bem, ${name}! 🌟`, `Guardado! Orgulho de você, ${name}! 💪`],
+          2: [`Anotado, ${name}! Tô de olho no seu bolso! 💚`, `Registrado! Vai com calma né, ${name}? 😄`],
+          3: [`ANOTADO, ${name}! Mas hein... gastando isso tudo? 😂 Te amo mesmo assim! 💚`],
         },
         NEUTRO: {
-          1: [`Anotado!`, `Registrado.`, `Ok, guardei aqui.`],
-          2: [`Anotado! Tô de olho. 😎`, `Registrado! Todo mês é isso né? 😄`],
-          3: [`Anotado! Mais um pro contador chorar. 😂`, `Registrado! Teu bolso agradece... ou não. 😅`],
+          1: [`Anotado, ${name}!`, `Registrado, ${name}.`, `Ok, guardei aqui.`],
+          2: [`Anotado, ${name}! Tô de olho. 😎`, `Registrado! Todo mês é isso né, ${name}? 😄`],
+          3: [`Anotado, ${name}! Mais um pro contador chorar. 😂`, `Registrado! Teu bolso agradece... ou não. 😅`],
         },
         AGRESSIVO: {
-          1: [`Anotado.`, `Ok.`, `Registrado, chefe.`],
-          2: [`Anotado. De novo. Todo mês. Sério? 😤`, `Registrado. O iFood agradece sua fidelidade. 🛵`],
-          3: [`Outro gasto? Teu fígado vai na frente. 😂`, `Anotado! Mas se tivesse guardado tudo isso... 🤦`],
+          1: [`Anotado, ${name}.`, `Ok, ${name}.`, `Registrado.`],
+          2: [`Anotado, ${name}. De novo. Todo mês. Sério? 😤`, `Registrado. O iFood agradece sua fidelidade, ${name}. 🛵`],
+          3: [`Outro gasto, ${name}? Teu fígado vai na frente. 😂`, `Anotado! Mas se tivesse guardado tudo isso, ${name}... 🤦`],
         },
       }
       const options = previews[tone]?.[zoeira] ?? previews.NEUTRO[2]
@@ -132,7 +132,7 @@ export default function TucoSettings() {
       <div className="card p-6 space-y-4">
         <div className="flex items-center gap-2 mb-2">
           <MessageCircle size={20} className="text-brand" />
-          <h3 className="font-bold text-white">Tom do {name}</h3>
+          <h3 className="font-bold text-white">Tom do Tuco</h3>
         </div>
         <div className="grid gap-3">
           {TONES.map((t) => (
@@ -183,21 +183,21 @@ export default function TucoSettings() {
         </div>
       </div>
 
-      {/* Nome do personagem */}
+      {/* Apelido do usuário */}
       <div className="card p-6 space-y-4">
-        <h3 className="font-bold text-white">Nome do personagem</h3>
+        <h3 className="font-bold text-white">Como o Tuco vai te chamar?</h3>
         <div>
-          <label className="label">Como chamar seu assistente?</label>
+          <label className="label">Seu apelido</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Tuco"
+            placeholder="chefe"
             maxLength={50}
             className="input-field"
           />
           <p className="text-xs text-dark-700 mt-1.5">
-            Padrão: Tuco. Mas pode ser "Bolso", "Pix", "Contador"... vai na criatividade!
+            Pode ser seu nome, apelido, "chefe", "patrão"... o Tuco vai usar isso pra te chamar.
           </p>
         </div>
 
@@ -215,7 +215,7 @@ export default function TucoSettings() {
             <div className="bg-dark-200 rounded-xl p-3 border border-dark-400 animate-fade-in">
               <div className="flex items-start gap-2">
                 <div className="w-7 h-7 bg-brand rounded-full flex items-center justify-center text-black text-xs font-bold shrink-0">
-                  {name.charAt(0)}
+                  T
                 </div>
                 <p className="text-sm text-white">{previewMsg}</p>
               </div>
@@ -231,7 +231,7 @@ export default function TucoSettings() {
           <h3 className="font-bold text-white">Vincular WhatsApp</h3>
         </div>
         <p className="text-sm text-dark-800">
-          Cadastre seu número para usar o {name} pelo WhatsApp.
+          Cadastre seu número para usar o Tuco pelo WhatsApp.
           Depois de salvar, mande qualquer mensagem para o número do Tuco para ativar.
         </p>
         <div className="flex gap-3">
@@ -268,7 +268,7 @@ export default function TucoSettings() {
         className="btn-primary w-full flex items-center justify-center gap-2 py-3"
       >
         <Save size={18} />
-        {loading ? 'Salvando...' : `Salvar configurações do ${name}`}
+        {loading ? 'Salvando...' : 'Salvar configurações do Tuco'}
       </button>
     </div>
   )

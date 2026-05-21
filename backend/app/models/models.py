@@ -52,6 +52,7 @@ class User(Base):
     payments = relationship("Payment", back_populates="user", cascade="all, delete-orphan")
     tuco_settings = relationship("TucoSettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
     accounts_resume = relationship("AccountsResume", back_populates="user", cascade="all, delete-orphan")
+    expenses = relationship("Expense", back_populates="user", cascade="all, delete-orphan")
     whatsapp_messages = relationship("WhatsAppMessage", back_populates="user", cascade="all, delete-orphan")
 
 
@@ -64,7 +65,7 @@ class TucoSettings(Base):
     user_id = Column(String, ForeignKey("users.id"), unique=True, nullable=False)
     tone = Column(SAEnum(TucoTone), default=TucoTone.NEUTRO)
     zoeira_level = Column(Integer, default=2)  # 1=Leve, 2=Médio, 3=Pesado
-    tuco_name = Column(String(50), default="Tuco")
+    tuco_name = Column(String(50), default="chefe")
     active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -199,6 +200,24 @@ class AccountsResume(Base):
 
 
 # ─── WhatsApp Message Log ─────────────────────────────────────────────────────
+
+class Expense(Base):
+    """Gastos avulsos já pagos na hora (PIX, dinheiro, débito)."""
+    __tablename__ = "expenses"
+
+    id           = Column(String, primary_key=True, default=gen_uuid)
+    user_id      = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    description  = Column(String(255), nullable=False)
+    amount       = Column(Float, nullable=False)
+    method       = Column(String(30), nullable=True)   # PIX | DINHEIRO | DEBITO
+    category     = Column(String(50), nullable=True)   # ALIMENTACAO | TRANSPORTE...
+    expense_date = Column(DateTime, default=datetime.utcnow)
+    month        = Column(Integer, nullable=False)
+    year         = Column(Integer, nullable=False)
+    notes        = Column(Text, nullable=True)
+
+    user = relationship("User", back_populates="expenses")
+
 
 class WhatsAppMessage(Base):
     __tablename__ = "whatsapp_messages"

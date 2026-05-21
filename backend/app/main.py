@@ -7,7 +7,7 @@ import os
 from app.config import settings
 from app.database import engine, Base
 from app.models import models  # noqa — garante que os modelos sejam registrados
-from app.routers import auth, accounts, payments, dashboard, whatsapp
+from app.routers import auth, accounts, payments, dashboard, whatsapp, expenses
 
 # Cria as tabelas no banco (em produção, use Alembic migrations)
 Base.metadata.create_all(bind=engine)
@@ -40,6 +40,7 @@ app.include_router(accounts.router, prefix="/api")
 app.include_router(payments.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(whatsapp.router, prefix="/api")
+app.include_router(expenses.router, prefix="/api")
 
 
 # ─── Health Check ────────────────────────────────────────────────────────────

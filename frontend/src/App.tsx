@@ -8,6 +8,7 @@ import Accounts from '@/pages/Accounts'
 import Payments from '@/pages/Payments'
 import Summary from '@/pages/Summary'
 import TucoSettings from '@/pages/TucoSettings'
+import Expenses from '@/pages/Expenses'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="accounts" element={<Accounts />} />
         <Route path="payments" element={<Payments />} />
+        <Route path="expenses" element={<Expenses />} />
         <Route path="summary" element={<Summary />} />
         <Route path="tuco" element={<TucoSettings />} />
       </Route>
