@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request, Form, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.database import get_db, SessionLocal
 from app.services.auth_service import get_user_by_phone
-from app.services.tuco_service import interpret_message, generate_tuco_response, generate_query_response
+from app.services.tuco_service import interpret_message, generate_tuco_response, generate_query_response, generate_clarification_request
 from app.services.whatsapp_service import send_whatsapp_message, parse_twilio_webhook, parse_evolution_webhook
 from app.models.models import WhatsAppMessage, MainAccount, DynamicAccount, AccountType, DynamicShopping, Payment, Expense, PaidStatus, SubscriptionPlan
 from app.config import settings
@@ -51,8 +51,29 @@ HELP_MSG = """👋 Eu sou o *Tuco*, seu assistente financeiro!
 
 UNKNOWN_MSG = "Hmm, não entendi bem... 🤔 Tenta assim:\n`Mercado 150` ou pergunta `quanto gastei hoje?`"
 
+# Typos e variações comuns de métodos de pagamento
+_METHOD_TYPOS: dict[str, str] = {
+    # PIX
+    "pox": "PIX", "pis": "PIX", "pxi": "PIX", "px": "PIX", "pik": "PIX",
+    "pix": "PIX",
+    # DINHEIRO
+    "dinheiro": "DINHEIRO", "din": "DINHEIRO", "dnh": "DINHEIRO", "dinhero": "DINHEIRO",
+    "especie": "DINHEIRO", "espécie": "DINHEIRO", "dizer": "DINHEIRO",
+    # DEBITO
+    "debito": "DEBITO", "débito": "DEBITO", "deb": "DEBITO", "déb": "DEBITO",
+    # CREDITO
+    "credito": "CREDITO", "crédito": "CREDITO", "cred": "CREDITO",
+    "cartao": "CREDITO", "cartão": "CREDITO",
+}
 
-async def _execute_single_intent(intent_data: dict, user, db: Session) -> str:
+def _normalize_method(method: str | None) -> str | None:
+    """Normaliza método retornado pelo Claude, corrigindo typos."""
+    if not method:
+        return None
+    return _METHOD_TYPOS.get(method.lower().strip(), method.upper())
+
+
+async def _execute_single_intent(intent_data: dict, user, db: Session, original_body: str = "") -> str:
     """Executa um único intent e retorna o texto de resposta."""
     import logging
     logger = logging.getLogger("whatsapp")
@@ -116,10 +137,24 @@ async def _execute_single_intent(intent_data: dict, user, db: Session) -> str:
         expense_data = intent_data.get("expense", {}) or {}
         amount = expense_data.get("amount", 0)
         category = expense_data.get("category", "Gasto")
-        method = expense_data.get("method")
+        method = _normalize_method(expense_data.get("method"))
 
         if amount <= 0:
             return "Não consegui identificar o valor. Tenta assim: `Mercado 150` 😅"
+
+        # PIX, DINHEIRO e DÉBITO são SEMPRE gasto avulso — sem exceção, sem verificar contas
+        if method in ("PIX", "DINHEIRO", "DEBITO"):
+            now = datetime.utcnow()
+            db.add(Expense(
+                user_id=user.id, description=category, amount=amount,
+                method=method, category=category, month=now.month, year=now.year,
+            ))
+            db.commit()
+            return await generate_tuco_response(
+                f"Registrou gasto avulso de R$ {amount:.2f} em {category} via {method}",
+                {"category": category, "amount": amount, "method": method},
+                user, db
+            )
 
         dynamic_accounts = db.query(MainAccount).filter(
             MainAccount.user_id == user.id,
@@ -153,12 +188,12 @@ async def _execute_single_intent(intent_data: dict, user, db: Session) -> str:
                     db.refresh(new_main)
                     target_account = new_main
             else:
-                # "Marquei", "fiado", conta nomeada: cria conta com o nome da categoria
+                # method is None: "marquei", "fiado", "conta X" → cria conta com o nome da categoria
                 new_main = MainAccount(
                     user_id=user.id,
                     account_name=category,
                     account_type=AccountType.DYNAMIC,
-                    description=f"Conta criada pelo Tuco",
+                    description="Conta criada pelo Tuco",
                 )
                 db.add(new_main)
                 db.flush()
@@ -200,7 +235,7 @@ async def _execute_single_intent(intent_data: dict, user, db: Session) -> str:
         expense_data = intent_data.get("expense", {}) or {}
         amount = expense_data.get("amount", 0)
         category = expense_data.get("category", "Gasto")
-        method = expense_data.get("method")
+        method = _normalize_method(expense_data.get("method"))
 
         if amount <= 0:
             return "Não consegui identificar o valor. Tenta assim: `Mercado 150 pix` 😅"
@@ -241,19 +276,12 @@ async def _execute_single_intent(intent_data: dict, user, db: Session) -> str:
         for item in items:
             category = item.get("category", "Gasto")
             amount = item.get("amount", 0)
-            method = item.get("method")
+            method = _normalize_method(item.get("method"))
             if amount <= 0:
                 continue
 
-            # Decide se vai para conta dinâmica ou gasto avulso
-            goes_to_account = (
-                method == "CREDITO" or
-                method is None or  # sem método = fiado/marquei → conta nomeada
-                any(category.lower() in acc.account_name.lower() or acc.account_name.lower() in category.lower() for acc in dynamic_accounts)
-            )
-            is_avulso = method in ("PIX", "DINHEIRO", "DEBITO")
-
-            if is_avulso:
+            # PIX, DINHEIRO e DÉBITO são SEMPRE gasto avulso — sem exceção
+            if method in ("PIX", "DINHEIRO", "DEBITO"):
                 db.add(Expense(
                     user_id=user.id, description=category, amount=amount,
                     method=method, category=category, month=now.month, year=now.year,
@@ -500,7 +528,8 @@ async def _execute_single_intent(intent_data: dict, user, db: Session) -> str:
             )
         return f"Não encontrei nenhum lançamento recente de *{category}* pra corrigir. Confere o nome e tenta de novo 🔍"
 
-    return UNKNOWN_MSG
+    # DESCONHECIDO — pede confirmação/esclarecimento baseado no que foi enviado
+    return await generate_clarification_request(original_body or "?", user, db)
 
 
 async def process_whatsapp_message(phone: str, body: str, db: Session, provider: str = "twilio"):
@@ -588,14 +617,14 @@ async def process_whatsapp_message(phone: str, body: str, db: Session, provider:
             log.intent = " + ".join(d.get("intent", "?") for d in intents_list)
             db.commit()
             for intent_data in intents_list:
-                r = await _execute_single_intent(intent_data, user, db)
+                r = await _execute_single_intent(intent_data, user, db, body)
                 if r:
                     responses.append(r)
-            response_text = "\n\n—\n\n".join(responses) if responses else UNKNOWN_MSG
+            response_text = "\n\n—\n\n".join(responses) if responses else await generate_clarification_request(body, user, db)
         else:
             log.intent = interpretation.get("intent", "DESCONHECIDO")
             db.commit()
-            response_text = await _execute_single_intent(interpretation, user, db)
+            response_text = await _execute_single_intent(interpretation, user, db, body)
 
         # ── Incrementa contador Free ──────────────────────────────────────────
         if user.plan == SubscriptionPlan.FREE:

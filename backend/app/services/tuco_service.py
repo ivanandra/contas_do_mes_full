@@ -102,7 +102,9 @@ INTENTS DISPONÍVEIS:
    REGRA: se existe conta DYNAMIC com esse nome → use NOVO_GASTO (nunca AMBIGUO)
 
 2. GASTO_AVULSO — dinheiro que JÁ saiu do bolso (PIX, dinheiro, débito)
-   Sinais: "pix", "no dinheiro", "débito", "paguei com", "espécie", "já paguei"
+   Sinais: "pix", "pox", "pis", "px" (typos de pix), "dinheiro", "din", "dnh", "espécie", "especie",
+           "débito", "debito", "déb", "cartão de débito", "no dinheiro", "paguei com", "já paguei"
+   REGRA: qualquer variação/typo de pix/dinheiro/débito → SEMPRE GASTO_AVULSO, sem exceção
 
 3. AMBIGUO — valor + categoria, sem método E sem conta dinâmica com esse nome
    Use SOMENTE quando genuinamente não sabe a rota do dinheiro
@@ -205,6 +207,41 @@ Nunca mencione "Claude", "IA" ou "assistente". Só o texto, sem aspas:"""
         return "Opa, registrado! 💰 Tô de olho nas suas finanças! 😎"
 
 
+# ─── Generate clarification request ─────────────────────────────────────────
+
+async def generate_clarification_request(message: str, user: User, db: Session) -> str:
+    """Quando Tuco não entende, gera uma pergunta de confirmação com base no que captou."""
+    tuco_cfg = _get_tuco_settings(db, user.id)
+    tone_desc = TONE_DESCRIPTIONS.get(tuco_cfg.tone.value, TONE_DESCRIPTIONS["NEUTRO"])
+    user_nickname = tuco_cfg.tuco_name
+
+    prompt = f"""Você é o Tuco — assistente financeiro com personalidade autêntica.
+Tom: {tone_desc}
+Chame o usuário de "{user_nickname}".
+
+O usuário enviou: "{message}"
+Você não conseguiu identificar a intenção financeira com clareza.
+
+Gere UMA resposta curta que:
+- Se identificou algo parcialmente (valor, categoria, nome): mencione e peça confirmação.
+  Ex: "Entendi que foi R$150 em cerveja — foi pix, dinheiro ou crédito?"
+- Se não entendeu nada: peça para reformular de forma simples e direta.
+  Ex: "Não captei, {user_nickname}. Tenta assim: `Mercado 150 pix` ou `quanto gastei hoje?`"
+- Máximo 2 linhas. Português informal. 1 emoji opcional.
+- NUNCA diga que é IA ou que não consegue processar."""
+
+    try:
+        client = _get_client()
+        response = await client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=100,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.content[0].text.strip()
+    except Exception:
+        return f"Não entendi bem, {user_nickname}. 🤔 Tenta: `Mercado 150 pix` ou `quanto gastei hoje?`"
+
+
 # ─── Generate query response ─────────────────────────────────────────────────
 
 async def generate_query_response(query_type: str, data: dict, user: User, db: Session) -> str:
@@ -221,11 +258,12 @@ Chame o usuário de "{user_nickname}".
 O usuário pediu: {query_type}
 Dados: {json.dumps(data, ensure_ascii=False, default=str)}
 
-Gere uma resposta informativa com sua personalidade.
-Use formatação markdown (negrito, títulos, listas) para organizar bem os dados.
-Inclua TODOS os dados recebidos, sem omitir nenhum item.
-Português brasileiro informal. Use emojis.
-No final, adicione apenas 1 linha curta de humor/zoeira do Tuco sobre os dados."""
+REGRAS DE FORMATO — siga à risca:
+1. Mostre os dados de forma limpa: título, total em destaque, lista de itens (sem comentário por item).
+2. Use markdown (negrito, listas). Inclua TODOS os itens recebidos.
+3. Seja CONCISO — o usuário precisa absorver rápido pelo WhatsApp.
+4. No FINAL da mensagem, adicione APENAS UMA linha curta de sarcasmo/zoeira do Tuco (máx 1 frase).
+5. NADA de "moral da história", "a real", parágrafo extra de análise ou comentário por item."""
 
     try:
         client = _get_client()

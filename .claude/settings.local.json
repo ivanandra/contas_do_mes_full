@@ -31,7 +31,8 @@
       "Bash(ipconfig)",
       "Bash(findstr \"IPv4\")",
       "Bash(C:\\\\contas_do_mes_full\\\\backend\\\\venv\\\\Scripts\\\\python.exe -c \"import ast, sys; ast.parse\\(open\\('app/routers/whatsapp.py'\\).read\\(\\)\\); print\\('whatsapp.py OK'\\); ast.parse\\(open\\('app/services/tuco_service.py'\\).read\\(\\)\\); print\\('tuco_service.py OK'\\)\")",
-      "PowerShell(& \"C:\\\\contas_do_mes_full\\\\backend\\\\venv\\\\Scripts\\\\python.exe\" -c \"import ast; ast.parse\\(open\\('C:/contas_do_mes_full/backend/app/routers/whatsapp.py'\\).read\\(\\)\\); print\\('whatsapp.py OK'\\); ast.parse\\(open\\('C:/contas_do_mes_full/backend/app/services/tuco_service.py'\\).read\\(\\)\\); print\\('tuco_service.py OK'\\)\")"
+      "PowerShell(& \"C:\\\\contas_do_mes_full\\\\backend\\\\venv\\\\Scripts\\\\python.exe\" -c \"import ast; ast.parse\\(open\\('C:/contas_do_mes_full/backend/app/routers/whatsapp.py'\\).read\\(\\)\\); print\\('whatsapp.py OK'\\); ast.parse\\(open\\('C:/contas_do_mes_full/backend/app/services/tuco_service.py'\\).read\\(\\)\\); print\\('tuco_service.py OK'\\)\")",
+      "PowerShell(Start-Sleep -Seconds 3; try { $r = Invoke-WebRequest -Uri \"http://localhost:8000/health\" -TimeoutSec 5 -UseBasicParsing; Write-Host \"Backend OK — status $\\($r.StatusCode\\)\" } catch { Write-Host \"Aguardando...\" })"
     ]
   }
 }
