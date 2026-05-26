@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime
-from app.models.models import AccountType, PaidStatus, TucoTone
+from app.models.models import AccountType, PaidStatus, TucoTone, SubscriptionPlan
 
 
 # ─── Auth ────────────────────────────────────────────────────────────────────
@@ -29,6 +29,7 @@ class UserOut(BaseModel):
     name: str
     whatsapp_phone: Optional[str]
     avatar_url: Optional[str]
+    plan: SubscriptionPlan = SubscriptionPlan.FREE
     created_at: datetime
 
     class Config:
@@ -211,6 +212,24 @@ class ExpenseOut(BaseModel):
     month: int
     year: int
     notes: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+# ─── Billing / Planos ────────────────────────────────────────────────────────
+
+class CheckoutCreate(BaseModel):
+    plan: str  # "PRO" | "PRO_ANUAL"
+
+
+class CheckoutResponse(BaseModel):
+    url: str
+
+
+class BillingStatus(BaseModel):
+    plan: SubscriptionPlan
+    plan_expires_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

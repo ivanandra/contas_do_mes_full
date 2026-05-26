@@ -21,7 +21,17 @@
       "PowerShell(Stop-Process -Name \"uvicorn\" -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1; Start-Process cmd -ArgumentList '/k', 'cd /d C:\\\\contas_do_mes_full\\\\backend && venv\\\\Scripts\\\\activate && uvicorn app.main:app --reload --port 8000' -WindowStyle Normal; Start-Sleep -Seconds 4; try { \\(Invoke-WebRequest -Uri 'http://localhost:8000/api/health' -UseBasicParsing -TimeoutSec 5\\).Content } catch { \"Subindo...\" })",
       "Bash(python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload)",
       "Bash(curl -s http://localhost:8000/health)",
-      "Bash(curl -s http://localhost:8000/)"
+      "Bash(curl -s http://localhost:8000/)",
+      "Bash(xargs grep -l \"Free\\\\|Pro\\\\|plan\")",
+      "Bash(xargs grep -l \"tuco\\\\|Tuco\")",
+      "Bash(venv\\\\Scripts\\\\pip install *)",
+      "Read(//mnt/c/contas_do_mes_full/**)",
+      "Bash(venv/Scripts/pip install *)",
+      "Bash(python -m pip install stripe)",
+      "Bash(ipconfig)",
+      "Bash(findstr \"IPv4\")",
+      "Bash(C:\\\\contas_do_mes_full\\\\backend\\\\venv\\\\Scripts\\\\python.exe -c \"import ast, sys; ast.parse\\(open\\('app/routers/whatsapp.py'\\).read\\(\\)\\); print\\('whatsapp.py OK'\\); ast.parse\\(open\\('app/services/tuco_service.py'\\).read\\(\\)\\); print\\('tuco_service.py OK'\\)\")",
+      "PowerShell(& \"C:\\\\contas_do_mes_full\\\\backend\\\\venv\\\\Scripts\\\\python.exe\" -c \"import ast; ast.parse\\(open\\('C:/contas_do_mes_full/backend/app/routers/whatsapp.py'\\).read\\(\\)\\); print\\('whatsapp.py OK'\\); ast.parse\\(open\\('C:/contas_do_mes_full/backend/app/services/tuco_service.py'\\).read\\(\\)\\); print\\('tuco_service.py OK'\\)\")"
     ]
   }
 }

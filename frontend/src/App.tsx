@@ -9,6 +9,7 @@ import Payments from '@/pages/Payments'
 import Summary from '@/pages/Summary'
 import TucoSettings from '@/pages/TucoSettings'
 import Expenses from '@/pages/Expenses'
+import Plans from '@/pages/Plans'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="expenses" element={<Expenses />} />
         <Route path="summary" element={<Summary />} />
         <Route path="tuco" element={<TucoSettings />} />
+        <Route path="planos" element={<Plans />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

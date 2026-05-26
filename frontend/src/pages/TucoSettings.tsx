@@ -127,7 +127,7 @@ export default function TucoSettings() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6 animate-fade-in">
+    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
       {/* Tom do Tuco */}
       <div className="card p-6 space-y-4">
         <div className="flex items-center gap-2 mb-2">
@@ -161,7 +161,7 @@ export default function TucoSettings() {
       {/* Nível de zoeira */}
       <div className="card p-6 space-y-4">
         <h3 className="font-bold text-white">Nível de zoeira</h3>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {ZOEIRA_LEVELS.map((z) => (
             <button
               key={z.value}
@@ -234,7 +234,7 @@ export default function TucoSettings() {
           Cadastre seu número para usar o Tuco pelo WhatsApp.
           Depois de salvar, mande qualquer mensagem para o número do Tuco para ativar.
         </p>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="tel"
             value={phone}

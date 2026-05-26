@@ -98,7 +98,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Greeting */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-black text-white">
             Fala, <span className="text-gradient">{user?.name?.split(' ')[0]}</span>! 👋
@@ -107,7 +107,7 @@ export default function Dashboard() {
             {MONTH_NAMES[today.getMonth()]} de {today.getFullYear()} — vamos ver onde tá indo seu dinheiro
           </p>
         </div>
-        <button onClick={handleResetMonth} className="btn-secondary flex items-center gap-2">
+        <button onClick={handleResetMonth} className="btn-secondary flex items-center gap-2 shrink-0">
           <CheckCircle size={16} />
           Fechar mês
         </button>

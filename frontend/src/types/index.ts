@@ -1,6 +1,7 @@
 export type AccountType = 'MONTHLY' | 'DYNAMIC' | 'INSTALLMENT'
 export type PaidStatus = 'PAID' | 'PARTIAL' | 'NOTPAID'
 export type TucoTone = 'AMOROSO' | 'NEUTRO' | 'AGRESSIVO'
+export type SubscriptionPlan = 'FREE' | 'PRO' | 'PRO_ANUAL'
 
 export interface User {
   id: string
@@ -8,6 +9,7 @@ export interface User {
   name: string
   whatsapp_phone?: string
   avatar_url?: string
+  plan: SubscriptionPlan
   created_at: string
 }
 

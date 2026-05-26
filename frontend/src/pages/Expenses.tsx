@@ -198,6 +198,7 @@ export default function Expenses() {
             <p className="text-sm">Gastos pagos no PIX, dinheiro ou débito aparecem aqui.</p>
           </div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-dark-400 text-dark-800 text-xs uppercase tracking-wider">
@@ -242,6 +243,7 @@ export default function Expenses() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

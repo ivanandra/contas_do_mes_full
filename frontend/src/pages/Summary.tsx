@@ -38,7 +38,7 @@ export default function Summary() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Year filter */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2">
           {[2024, 2025, 2026].map((y) => (
             <button

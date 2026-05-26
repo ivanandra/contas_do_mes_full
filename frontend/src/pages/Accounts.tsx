@@ -99,13 +99,13 @@ export default function Accounts() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-dark-800 text-sm">
             {totalAccounts} conta{totalAccounts !== 1 ? 's' : ''} cadastrada{totalAccounts !== 1 ? 's' : ''}
           </p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="btn-primary flex items-center gap-2">
+        <button onClick={() => setShowCreate(true)} className="btn-primary flex items-center gap-2 shrink-0">
           <Plus size={18} />
           Nova conta
         </button>

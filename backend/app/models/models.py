@@ -34,6 +34,12 @@ class TucoTone(str, enum.Enum):
     AGRESSIVO = "AGRESSIVO"
 
 
+class SubscriptionPlan(str, enum.Enum):
+    FREE = "FREE"
+    PRO = "PRO"
+    PRO_ANUAL = "PRO_ANUAL"
+
+
 # ─── User ───────────────────────────────────────────────────────────────────
 
 class User(Base):
@@ -45,6 +51,12 @@ class User(Base):
     name = Column(String(255), nullable=False)
     whatsapp_phone = Column(String(30), nullable=True, unique=True)
     avatar_url = Column(Text, nullable=True)
+    plan = Column(SAEnum(SubscriptionPlan), default=SubscriptionPlan.FREE, nullable=False)
+    stripe_customer_id = Column(String(100), nullable=True, unique=True)
+    stripe_subscription_id = Column(String(100), nullable=True)
+    plan_expires_at = Column(DateTime, nullable=True)
+    tuco_monthly_interactions = Column(Integer, default=0)
+    tuco_interactions_reset_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
