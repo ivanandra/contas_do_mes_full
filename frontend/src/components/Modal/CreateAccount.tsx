@@ -4,19 +4,26 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import api from '@/services/api'
-import type { AccountType } from '@/types'
+import type { AccountType, Account } from '@/types'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+
+// Converte NaN (valor de input vazio com valueAsNumber:true) em undefined antes do zod validar
+const nanToUndef = (v: unknown) =>
+  typeof v === 'number' && Number.isNaN(v) ? undefined : v
+
+const numOpt = z.preprocess(nanToUndef, z.number().optional())
+const intOpt = z.preprocess(nanToUndef, z.number().int().optional())
 
 const schema = z.object({
   account_name: z.string().min(1, 'Nome obrigatório'),
   account_type: z.enum(['MONTHLY', 'DYNAMIC', 'INSTALLMENT']),
   description: z.string().optional(),
-  value: z.number().optional(),
-  limit_value: z.number().optional(),
-  total_value: z.number().optional(),
-  number_of_installments: z.number().int().optional(),
-  due_date: z.number().int().min(1).max(31),
+  value: numOpt,
+  limit_value: numOpt,
+  total_value: numOpt,
+  number_of_installments: intOpt,
+  due_date: z.preprocess(nanToUndef, z.number().int().min(1).max(31)),
 })
 type FormData = z.infer<typeof schema>
 
@@ -26,21 +33,58 @@ const TYPE_OPTIONS: { value: AccountType; label: string; desc: string; icon: Rea
   { value: 'INSTALLMENT', label: 'Parcelamento', desc: 'Compras parceladas', icon: <Layers size={16} /> },
 ]
 
+function getDefaults(account?: Account): Partial<FormData> {
+  if (!account) return { account_type: 'MONTHLY', due_date: 10 }
+  return {
+    account_name: account.account_name,
+    account_type: account.account_type,
+    description: account.description ?? '',
+    value: account.monthly_account?.value,
+    limit_value: account.dynamic_account?.limit_value,
+    total_value: account.installment_account?.total_value,
+    number_of_installments: account.installment_account?.number_of_installments,
+    due_date:
+      account.monthly_account?.due_date ??
+      account.dynamic_account?.due_date ??
+      account.installment_account?.due_date ??
+      10,
+  }
+}
+
 export default function CreateAccountModal({
   onClose,
   onSuccess,
+  account,
 }: {
   onClose: () => void
   onSuccess: () => void
+  account?: Account
 }) {
+  const isEdit = !!account
   const [loading, setLoading] = useState(false)
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { account_type: 'MONTHLY', due_date: 10 },
+    defaultValues: getDefaults(account),
   })
   const accountType = watch('account_type')
 
   const onSubmit = async (data: FormData) => {
+    // Validação manual dos campos obrigatórios do tipo selecionado
+    if (data.account_type === 'MONTHLY' && (!data.value || data.value <= 0)) {
+      return toast.error('Informe o valor da conta')
+    }
+    if (data.account_type === 'DYNAMIC' && (!data.limit_value || data.limit_value <= 0)) {
+      return toast.error('Informe o limite da conta')
+    }
+    if (data.account_type === 'INSTALLMENT') {
+      if (!data.total_value || data.total_value <= 0) {
+        return toast.error('Informe o valor total')
+      }
+      if (!data.number_of_installments || data.number_of_installments < 1) {
+        return toast.error('Informe o número de parcelas')
+      }
+    }
+
     setLoading(true)
     try {
       const payload: any = {
@@ -59,18 +103,23 @@ export default function CreateAccountModal({
           due_date: data.due_date,
         }
       }
-      await api.post('/accounts', payload)
 
-      const jokes = [
-        'Mais uma conta pra te fazer chorar no fim do mês! 😂',
-        'Boa! Agora o Tuco vai te vigiar de perto. 👀',
-        'Conta criada! Que venha o pagamento! 💸',
-        'Registrado! Pode gastar... mas com juízo! 😎',
-      ]
-      toast.success(jokes[Math.floor(Math.random() * jokes.length)])
+      if (isEdit) {
+        await api.put(`/accounts/${account!.id}`, payload)
+        toast.success('Conta atualizada! ✅')
+      } else {
+        await api.post('/accounts', payload)
+        const jokes = [
+          'Mais uma conta pra te fazer chorar no fim do mês! 😂',
+          'Boa! Agora o Tuco vai te vigiar de perto. 👀',
+          'Conta criada! Que venha o pagamento! 💸',
+          'Registrado! Pode gastar... mas com juízo! 😎',
+        ]
+        toast.success(jokes[Math.floor(Math.random() * jokes.length)])
+      }
       onSuccess()
     } catch (err: any) {
-      toast.error(err.response?.data?.detail ?? 'Erro ao criar conta')
+      toast.error(err.response?.data?.detail ?? (isEdit ? 'Erro ao atualizar' : 'Erro ao criar conta'))
     } finally {
       setLoading(false)
     }
@@ -80,7 +129,7 @@ export default function CreateAccountModal({
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-box max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-5 border-b border-dark-400">
-          <h2 className="text-xl font-bold text-white">Nova conta</h2>
+          <h2 className="text-xl font-bold text-white">{isEdit ? 'Editar conta' : 'Nova conta'}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center text-dark-800 hover:bg-dark-400 hover:text-white transition-colors">
             <X size={18} />
           </button>
@@ -95,12 +144,14 @@ export default function CreateAccountModal({
                 <button
                   key={t.value}
                   type="button"
-                  onClick={() => setValue('account_type', t.value)}
+                  onClick={() => !isEdit && setValue('account_type', t.value)}
+                  disabled={isEdit}
                   className={clsx(
                     'p-3 rounded-xl border text-left transition-all',
                     accountType === t.value
                       ? 'border-brand bg-brand/10'
-                      : 'border-dark-400 hover:border-dark-500'
+                      : 'border-dark-400 hover:border-dark-500',
+                    isEdit && 'opacity-60 cursor-not-allowed'
                   )}
                 >
                   <div className={`mb-1 ${accountType === t.value ? 'text-brand' : 'text-dark-700'}`}>
@@ -113,6 +164,9 @@ export default function CreateAccountModal({
                 </button>
               ))}
             </div>
+            {isEdit && (
+              <p className="text-xs text-dark-700 mt-2">Tipo da conta não pode ser alterado.</p>
+            )}
           </div>
 
           {/* Name */}
@@ -182,7 +236,7 @@ export default function CreateAccountModal({
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
             <button type="submit" disabled={loading} className="btn-primary flex-1">
-              {loading ? 'Criando...' : 'Criar conta'}
+              {loading ? (isEdit ? 'Salvando...' : 'Criando...') : (isEdit ? 'Salvar alterações' : 'Criar conta')}
             </button>
           </div>
         </form>

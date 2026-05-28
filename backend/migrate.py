@@ -20,6 +20,13 @@ migrations = [
         WHEN duplicate_object THEN null;
     END $$;
     """,
+    """
+    DO $$ BEGIN
+        CREATE TYPE emailreportfrequency AS ENUM ('NONE', 'WEEKLY', 'MONTHLY');
+    EXCEPTION
+        WHEN duplicate_object THEN null;
+    END $$;
+    """,
     # Adiciona as colunas na tabela users (IF NOT EXISTS é seguro para reexecutar)
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS plan subscriptionplan NOT NULL DEFAULT 'FREE'",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(100) UNIQUE",
@@ -27,6 +34,9 @@ migrations = [
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMP",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS tuco_monthly_interactions INTEGER DEFAULT 0",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS tuco_interactions_reset_at TIMESTAMP",
+    # Relatório por email no Tuco
+    "ALTER TABLE tuco_settings ADD COLUMN IF NOT EXISTS email_report_frequency emailreportfrequency NOT NULL DEFAULT 'NONE'",
+    "ALTER TABLE tuco_settings ADD COLUMN IF NOT EXISTS email_report_last_sent_at TIMESTAMP",
 ]
 
 with engine.connect() as conn:

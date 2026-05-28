@@ -12,7 +12,12 @@ import { formatCurrency, MONTH_NAMES } from '@/types'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
 
-const PIE_COLORS = ['#7EC243', '#3b82f6', '#f59e0b', '#a855f7']
+const PIE_COLOR_MAP: Record<string, string> = {
+  'Fixas':         '#7EC243', // verde brand
+  'Dinâmicas':     '#3b82f6', // azul
+  'Parcelamentos': '#f59e0b', // amarelo
+  'Gastos Avulsos':'#a855f7', // roxo
+}
 
 export default function Dashboard() {
   const user = useAuthStore((s) => s.user)
@@ -200,8 +205,8 @@ export default function Dashboard() {
                   paddingAngle={4}
                   dataKey="value"
                 >
-                  {pieData.map((_, index) => (
-                    <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                  {pieData.map((d, index) => (
+                    <Cell key={index} fill={PIE_COLOR_MAP[d.name] ?? '#7EC243'} />
                   ))}
                 </Pie>
                 <Tooltip
@@ -216,9 +221,9 @@ export default function Dashboard() {
             </div>
           )}
           <div className="flex flex-wrap gap-3 mt-2">
-            {pieData.map((d, i) => (
+            {pieData.map((d) => (
               <div key={d.name} className="flex items-center gap-1.5 text-xs text-dark-800">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ background: PIE_COLORS[i] }} />
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: PIE_COLOR_MAP[d.name] ?? '#7EC243' }} />
                 {d.name}
               </div>
             ))}

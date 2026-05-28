@@ -239,8 +239,8 @@ export default function Plans() {
         </div>
       </div>
 
-      {/* Comparison table */}
-      <div className="card overflow-hidden">
+      {/* Comparison table — só desktop (no mobile os 3 cards acima já cobrem tudo) */}
+      <div className="card overflow-hidden hidden md:block">
         <div className="p-5 border-b border-dark-400">
           <h3 className="font-bold text-white">Comparação completa</h3>
         </div>

@@ -17,3 +17,6 @@ twilio==8.10.0
 aiofiles==23.2.1
 python-dateutil==2.8.2
 stripe>=7.0.0
+apscheduler>=3.10.0
+resend>=0.7.0
+pytz>=2024.1

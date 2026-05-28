@@ -2,6 +2,7 @@ export type AccountType = 'MONTHLY' | 'DYNAMIC' | 'INSTALLMENT'
 export type PaidStatus = 'PAID' | 'PARTIAL' | 'NOTPAID'
 export type TucoTone = 'AMOROSO' | 'NEUTRO' | 'AGRESSIVO'
 export type SubscriptionPlan = 'FREE' | 'PRO' | 'PRO_ANUAL'
+export type EmailReportFrequency = 'NONE' | 'WEEKLY' | 'MONTHLY'
 
 export interface User {
   id: string
@@ -19,6 +20,7 @@ export interface TucoSettings {
   zoeira_level: number
   tuco_name: string
   active: boolean
+  email_report_frequency: EmailReportFrequency
 }
 
 export interface MonthlyAccount {

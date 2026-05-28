@@ -28,6 +28,7 @@ export default function Accounts() {
   const [data, setData] = useState<AccountsGroupedType>({ monthly: [], dynamic: [], installment: [] })
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
+  const [editAccount, setEditAccount] = useState<Account | null>(null)
   const [payAccount, setPayAccount] = useState<Account | null>(null)
   const [shoppingAccount, setShoppingAccount] = useState<Account | null>(null)
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([])
@@ -119,6 +120,7 @@ export default function Accounts() {
           icon={SECTION_ICONS[section]}
           accounts={data[section]}
           onPay={setPayAccount}
+          onEdit={setEditAccount}
           onDelete={handleDelete}
           onShopping={openShopping}
           expanded={expanded}
@@ -147,6 +149,13 @@ export default function Accounts() {
           onSuccess={() => { setShowCreate(false); loadAccounts() }}
         />
       )}
+      {editAccount && (
+        <CreateAccountModal
+          account={editAccount}
+          onClose={() => setEditAccount(null)}
+          onSuccess={() => { setEditAccount(null); loadAccounts() }}
+        />
+      )}
       {payAccount && (
         <PayAccountModal
           account={payAccount}
@@ -173,12 +182,13 @@ export default function Accounts() {
 // ─── Account Section ─────────────────────────────────────────────────────────
 
 function AccountSection({
-  title, icon, accounts, onPay, onDelete, onShopping, expanded, setExpanded,
+  title, icon, accounts, onPay, onEdit, onDelete, onShopping, expanded, setExpanded,
 }: {
   title: string
   icon: React.ReactNode
   accounts: Account[]
   onPay: (a: Account) => void
+  onEdit: (a: Account) => void
   onDelete: (id: string, name: string) => void
   onShopping: (a: Account) => void
   expanded: Record<string, boolean>
@@ -201,6 +211,7 @@ function AccountSection({
             key={account.id}
             account={account}
             onPay={onPay}
+            onEdit={onEdit}
             onDelete={onDelete}
             onShopping={onShopping}
             isExpanded={!!expanded[account.id]}
@@ -215,10 +226,11 @@ function AccountSection({
 // ─── Account Row ─────────────────────────────────────────────────────────────
 
 function AccountRow({
-  account, onPay, onDelete, onShopping, isExpanded, onToggle,
+  account, onPay, onEdit, onDelete, onShopping, isExpanded, onToggle,
 }: {
   account: Account
   onPay: (a: Account) => void
+  onEdit: (a: Account) => void
   onDelete: (id: string, name: string) => void
   onShopping: (a: Account) => void
   isExpanded: boolean
@@ -232,28 +244,24 @@ function AccountRow({
   const limit = account.dynamic_account?.limit_value
   const progress = limit && limit > 0 ? (value / limit) * 100 : null
 
-  return (
-    <div className="px-5 py-4 hover:bg-dark-300/50 transition-colors">
-      <div className="flex items-center gap-4">
-        {/* Status dot */}
-        <div className="shrink-0">
-          {account.is_late ? (
-            <AlertTriangle size={18} className="text-red-400" />
-          ) : account.paid_status === 'PAID' ? (
-            <CheckCircle size={18} className="text-brand" />
-          ) : account.paid_status === 'PARTIAL' ? (
-            <Clock size={18} className="text-yellow-400" />
-          ) : (
-            <div className="w-4 h-4 rounded-full border-2 border-dark-600" />
-          )}
-        </div>
+  const statusIcon = account.is_late ? (
+    <AlertTriangle size={18} className="text-red-400" />
+  ) : account.paid_status === 'PAID' ? (
+    <CheckCircle size={18} className="text-brand" />
+  ) : account.paid_status === 'PARTIAL' ? (
+    <Clock size={18} className="text-yellow-400" />
+  ) : (
+    <div className="w-4 h-4 rounded-full border-2 border-dark-600" />
+  )
 
-        {/* Name + description */}
+  return (
+    <div className="px-4 sm:px-5 py-4 hover:bg-dark-300/50 transition-colors">
+      {/* ── Linha 1: status + nome + valor (sempre lado a lado) ── */}
+      <div className="flex items-start gap-3">
+        <div className="shrink-0 pt-0.5">{statusIcon}</div>
+
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-semibold text-white truncate">{account.account_name}</p>
-            <PaidBadge status={account.paid_status} isLate={account.is_late} />
-          </div>
+          <p className="font-semibold text-white truncate">{account.account_name}</p>
           {account.description && (
             <p className="text-xs text-dark-800 truncate mt-0.5">{account.description}</p>
           )}
@@ -262,54 +270,65 @@ function AccountRow({
               {account.installment_account.installments_paid}/{account.installment_account.number_of_installments} parcelas
             </p>
           )}
+          <div className="mt-1.5">
+            <PaidBadge status={account.paid_status} isLate={account.is_late} />
+          </div>
         </div>
 
-        {/* Value */}
         <div className="text-right shrink-0">
-          <p className="font-bold text-white">{formatCurrency(value)}</p>
+          <p className="font-bold text-white whitespace-nowrap">{formatCurrency(value)}</p>
           {account.resting_value > 0 && (
-            <p className="text-xs text-dark-800">Resta: {formatCurrency(account.resting_value)}</p>
+            <p className="text-xs text-dark-800 whitespace-nowrap">Resta: {formatCurrency(account.resting_value)}</p>
           )}
         </div>
+      </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1 shrink-0">
-          {account.account_type === 'DYNAMIC' && (
-            <button
-              onClick={() => onShopping(account)}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-dark-700 hover:bg-dark-400 hover:text-blue-400 transition-colors"
-              title="Ver itens"
-            >
-              <ShoppingCart size={15} />
-            </button>
-          )}
-          {account.paid_status !== 'PAID' && (
-            <button
-              onClick={() => onPay(account)}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-dark-700 hover:bg-brand/10 hover:text-brand transition-colors"
-              title="Pagar"
-            >
-              <DollarSign size={15} />
-            </button>
-          )}
+      {/* ── Linha 2: ações alinhadas à direita ── */}
+      <div className="flex items-center justify-end gap-1 mt-3">
+        {account.account_type === 'DYNAMIC' && (
           <button
-            onClick={() => onDelete(account.id, account.account_name)}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-dark-700 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+            onClick={() => onShopping(account)}
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-dark-700 hover:bg-dark-400 hover:text-blue-400 transition-colors"
+            title="Ver itens"
           >
-            <Trash2 size={15} />
+            <ShoppingCart size={16} />
           </button>
+        )}
+        {account.paid_status !== 'PAID' && (
           <button
-            onClick={onToggle}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-dark-700 hover:bg-dark-400 hover:text-white transition-colors"
+            onClick={() => onPay(account)}
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-dark-700 hover:bg-brand/10 hover:text-brand transition-colors"
+            title="Pagar"
           >
-            {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+            <DollarSign size={16} />
           </button>
-        </div>
+        )}
+        <button
+          onClick={() => onEdit(account)}
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-dark-700 hover:bg-dark-400 hover:text-yellow-400 transition-colors"
+          title="Editar"
+        >
+          <Pencil size={16} />
+        </button>
+        <button
+          onClick={() => onDelete(account.id, account.account_name)}
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-dark-700 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+          title="Deletar"
+        >
+          <Trash2 size={16} />
+        </button>
+        <button
+          onClick={onToggle}
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-dark-700 hover:bg-dark-400 hover:text-white transition-colors"
+          title={isExpanded ? 'Recolher' : 'Expandir'}
+        >
+          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
       </div>
 
       {/* Dynamic progress bar */}
       {progress !== null && (
-        <div className="mt-3 ml-7">
+        <div className="mt-3">
           <div className="flex justify-between text-xs text-dark-800 mb-1">
             <span>{formatCurrency(value)} usado</span>
             <span>Limite: {formatCurrency(limit!)}</span>
@@ -325,7 +344,7 @@ function AccountRow({
 
       {/* Expanded details */}
       {isExpanded && (
-        <div className="mt-3 ml-7 p-3 bg-dark-300 rounded-xl text-xs text-dark-800 space-y-1 animate-fade-in">
+        <div className="mt-3 p-3 bg-dark-300 rounded-xl text-xs text-dark-800 space-y-1 animate-fade-in break-all">
           <p>ID: <span className="text-white font-mono">{account.id}</span></p>
           {account.monthly_account && (
             <p>Vencimento: todo dia <span className="text-white">{account.monthly_account.due_date}</span></p>

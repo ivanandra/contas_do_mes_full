@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     STRIPE_PRO_MONTHLY_PRICE_ID: str = ""
     STRIPE_PRO_ANNUAL_PRICE_ID: str = ""
 
+    # Resend (envio de email)
+    RESEND_API_KEY: str = ""
+    RESEND_FROM_EMAIL: str = "Tuco <tuco@contasdomes.com.br>"
+
     # App
     APP_NAME: str = "Contas do Mês"
     FRONTEND_URL: str = "http://localhost:5173"

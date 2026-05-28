@@ -207,6 +207,38 @@ Nunca mencione "Claude", "IA" ou "assistente". Só o texto, sem aspas:"""
         return "Opa, registrado! 💰 Tô de olho nas suas finanças! 😎"
 
 
+# ─── Generate email report zoeira line ──────────────────────────────────────
+
+async def generate_report_zoeira(data: dict, user: User, db: Session) -> str:
+    """Gera uma frase única de zoeira/comentário do Tuco sobre o relatório."""
+    tuco_cfg = _get_tuco_settings(db, user.id)
+    tone_desc = TONE_DESCRIPTIONS.get(tuco_cfg.tone.value, TONE_DESCRIPTIONS["NEUTRO"])
+    zoeira_desc = ZOEIRA_DESCRIPTIONS.get(tuco_cfg.zoeira_level, ZOEIRA_DESCRIPTIONS[2])
+    user_nickname = tuco_cfg.tuco_name
+
+    prompt = f"""Você é o Tuco — assistente financeiro com personalidade autêntica.
+Tom: {tone_desc}
+Zoeira: {tuco_cfg.zoeira_level}/3 — {zoeira_desc}
+Chame o usuário de "{user_nickname}".
+
+Dados do período: {json.dumps(data, ensure_ascii=False, default=str)}
+
+Gere UMA única frase curta (máximo 1 linha, máximo 140 caracteres) com sua personalidade,
+comentando os gastos do período. Pode ser zoeira, incentivo ou observação afiada.
+NUNCA mencione "Claude", "IA" ou "assistente". Português informal. Só o texto, sem aspas."""
+
+    try:
+        client = _get_client()
+        response = await client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=80,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.content[0].text.strip()
+    except Exception:
+        return f"Tô de olho nos seus gastos, {user_nickname}! 👀"
+
+
 # ─── Generate clarification request ─────────────────────────────────────────
 
 async def generate_clarification_request(message: str, user: User, db: Session) -> str:

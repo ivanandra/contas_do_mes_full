@@ -3,11 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
+import logging
 
 from app.config import settings
 from app.database import engine, Base
 from app.models import models  # noqa — garante que os modelos sejam registrados
 from app.routers import auth, accounts, payments, dashboard, whatsapp, expenses, billing
+from app.services.scheduler import start_scheduler, stop_scheduler
+
+logging.basicConfig(level=logging.INFO)
 
 # Cria as tabelas no banco (em produção, use Alembic migrations)
 Base.metadata.create_all(bind=engine)
@@ -19,6 +23,16 @@ app = FastAPI(
     docs_url="/api/docs" if settings.DEBUG else None,
     redoc_url="/api/redoc" if settings.DEBUG else None,
 )
+
+
+@app.on_event("startup")
+async def on_startup():
+    start_scheduler()
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    stop_scheduler()
 
 # ─── CORS ─────────────────────────────────────────────────────────────────────
 app.add_middleware(

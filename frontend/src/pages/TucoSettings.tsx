@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react'
-import { MessageCircle, Heart, Zap, Meh, Save, Smartphone } from 'lucide-react'
+import { MessageCircle, Heart, Zap, Meh, Save, Smartphone, Mail } from 'lucide-react'
 import api from '@/services/api'
 import { useAuthStore } from '@/store/auth'
-import type { TucoTone } from '@/types'
+import type { TucoTone, EmailReportFrequency } from '@/types'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+
+const EMAIL_FREQ_OPTIONS: { value: EmailReportFrequency; label: string; desc: string; emoji: string }[] = [
+  { value: 'NONE',    label: 'Nenhum',  desc: 'Não receber emails',                       emoji: '🚫' },
+  { value: 'WEEKLY',  label: 'Semanal', desc: 'Toda segunda às 9h (horário Brasília)',    emoji: '📅' },
+  { value: 'MONTHLY', label: 'Mensal',  desc: 'Todo dia 1 às 9h (horário Brasília)',      emoji: '🗓️' },
+]
 
 const TONES: { value: TucoTone; label: string; desc: string; emoji: string; icon: React.ReactNode }[] = [
   {
@@ -42,6 +48,7 @@ export default function TucoSettings() {
   const [zoeira, setZoeira] = useState(2)
   const [name, setName] = useState('chefe')
   const [active, setActive] = useState(true)
+  const [emailFreq, setEmailFreq] = useState<EmailReportFrequency>('NONE')
   const [phone, setPhone] = useState(user?.whatsapp_phone ?? '')
   const [loading, setLoading] = useState(false)
   const [savingPhone, setSavingPhone] = useState(false)
@@ -57,6 +64,7 @@ export default function TucoSettings() {
       setZoeira(res.data.zoeira_level)
       setName(res.data.tuco_name)
       setActive(res.data.active)
+      setEmailFreq(res.data.email_report_frequency ?? 'NONE')
     } catch {/* usa defaults */}
   }
 
@@ -65,6 +73,7 @@ export default function TucoSettings() {
     try {
       await api.put('/dashboard/tuco-settings', {
         tone, zoeira_level: zoeira, tuco_name: name, active,
+        email_report_frequency: emailFreq,
       })
       toast.success('Configurações do Tuco salvas! ✅')
     } catch {
@@ -259,6 +268,42 @@ export default function TucoSettings() {
             <li>Saldo: <span className="text-brand font-mono">qual meu saldo?</span></li>
           </ul>
         </div>
+      </div>
+
+      {/* Relatório por email */}
+      <div className="card p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <Mail size={20} className="text-brand" />
+          <h3 className="font-bold text-white">Relatório por email</h3>
+        </div>
+        <p className="text-sm text-dark-800">
+          Receba um resumo financeiro do Tuco direto na sua caixa de entrada — com gastos, contas pendentes e a zoeira de sempre.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+          {EMAIL_FREQ_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setEmailFreq(opt.value)}
+              className={clsx(
+                'p-4 rounded-xl border text-center transition-all',
+                emailFreq === opt.value
+                  ? 'border-brand bg-brand/10'
+                  : 'border-dark-400 hover:border-dark-500 hover:bg-dark-300'
+              )}
+            >
+              <div className="text-2xl mb-1">{opt.emoji}</div>
+              <p className={`text-sm font-semibold ${emailFreq === opt.value ? 'text-brand' : 'text-white'}`}>
+                {opt.label}
+              </p>
+              <p className="text-xs text-dark-800 mt-1">{opt.desc}</p>
+            </button>
+          ))}
+        </div>
+        {emailFreq !== 'NONE' && user?.email && (
+          <div className="bg-dark-300 rounded-xl p-3 text-xs text-dark-800">
+            📬 Será enviado para <span className="text-brand font-medium">{user.email}</span>
+          </div>
+        )}
       </div>
 
       {/* Save */}

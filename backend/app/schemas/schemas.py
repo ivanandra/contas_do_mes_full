@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime
-from app.models.models import AccountType, PaidStatus, TucoTone, SubscriptionPlan
+from app.models.models import AccountType, PaidStatus, TucoTone, SubscriptionPlan, EmailReportFrequency
 
 
 # ─── Auth ────────────────────────────────────────────────────────────────────
@@ -49,6 +49,7 @@ class TucoSettingsUpdate(BaseModel):
     zoeira_level: Optional[int] = Field(None, ge=1, le=3)
     tuco_name: Optional[str] = Field(None, max_length=50)
     active: Optional[bool] = None
+    email_report_frequency: Optional[EmailReportFrequency] = None
 
 
 class TucoSettingsOut(BaseModel):
@@ -57,6 +58,7 @@ class TucoSettingsOut(BaseModel):
     zoeira_level: int
     tuco_name: str
     active: bool
+    email_report_frequency: EmailReportFrequency = EmailReportFrequency.NONE
 
     class Config:
         from_attributes = True
@@ -198,6 +200,14 @@ class ExpenseCreate(BaseModel):
     description: str = Field(..., min_length=1, max_length=255)
     amount: float = Field(..., gt=0)
     method: Optional[str] = None       # PIX | DINHEIRO | DEBITO
+    category: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class ExpenseUpdate(BaseModel):
+    description: Optional[str] = Field(None, min_length=1, max_length=255)
+    amount: Optional[float] = Field(None, gt=0)
+    method: Optional[str] = None
     category: Optional[str] = None
     notes: Optional[str] = None
 

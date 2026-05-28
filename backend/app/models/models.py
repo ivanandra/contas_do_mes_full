@@ -40,6 +40,12 @@ class SubscriptionPlan(str, enum.Enum):
     PRO_ANUAL = "PRO_ANUAL"
 
 
+class EmailReportFrequency(str, enum.Enum):
+    NONE = "NONE"
+    WEEKLY = "WEEKLY"
+    MONTHLY = "MONTHLY"
+
+
 # ─── User ───────────────────────────────────────────────────────────────────
 
 class User(Base):
@@ -79,6 +85,8 @@ class TucoSettings(Base):
     zoeira_level = Column(Integer, default=2)  # 1=Leve, 2=Médio, 3=Pesado
     tuco_name = Column(String(50), default="chefe")
     active = Column(Boolean, default=True)
+    email_report_frequency = Column(SAEnum(EmailReportFrequency), default=EmailReportFrequency.NONE, nullable=False)
+    email_report_last_sent_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="tuco_settings")

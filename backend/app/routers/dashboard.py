@@ -111,6 +111,8 @@ def update_tuco_settings(
         settings_obj.tuco_name = update.tuco_name
     if update.active is not None:
         settings_obj.active = update.active
+    if update.email_report_frequency is not None:
+        settings_obj.email_report_frequency = update.email_report_frequency
 
     db.commit()
     db.refresh(settings_obj)
