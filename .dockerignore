@@ -1,0 +1,35 @@
+# Não copia frontend (vai pro Vercel)
+frontend/
+node_modules/
+
+# Não copia ambientes virtuais
+backend/venv/
+backend/.venv/
+venv/
+.venv/
+
+# Não copia caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Não copia env files com credenciais
+backend/.env
+backend/.env.local
+.env
+.env.local
+
+# Outros
+.git/
+.gitignore
+.vscode/
+.idea/
+.claude/
+*.md
+*.log
+docker-compose.yml
+start-dev.bat
