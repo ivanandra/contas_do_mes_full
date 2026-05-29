@@ -35,14 +35,19 @@ async def on_shutdown():
     stop_scheduler()
 
 # ─── CORS ─────────────────────────────────────────────────────────────────────
+# Aceita múltiplas origens via env: ALLOWED_ORIGINS="https://contasdomes.com.br,https://www.contasdomes.com.br"
+extra_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+allowed_origins = list({
+    settings.FRONTEND_URL,
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    *extra_origins,
+})
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        settings.FRONTEND_URL,
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

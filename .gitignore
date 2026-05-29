@@ -18,6 +18,9 @@ venv/
 
 # Env files com credenciais
 backend/.env
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
 
 # Alembic
 backend/alembic/versions/*.pyc

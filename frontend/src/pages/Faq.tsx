@@ -57,7 +57,18 @@ const FAQS: { section: string; items: FaqItem[] }[] = [
     items: [
       {
         q: 'Como vinculo meu WhatsApp?',
-        a: <>Vai em <b>"Tuco"</b> no menu → desce até o card <b>"Vincular WhatsApp"</b> → coloca seu número no formato <code>5511999999999</code> (sem + ou espaços) → salva.</>,
+        a: (
+          <>
+            <b>Importante (fase beta):</b> antes de vincular, você precisa <b>ativar manualmente</b> o Tuco no WhatsApp:
+            <ol className="list-decimal pl-5 space-y-1 mt-2">
+              <li>Vai em <b>"Tuco"</b> no menu</li>
+              <li>Clica em <b>"Como ativar?"</b> no card "Vincular WhatsApp"</li>
+              <li>Segue os 3 passos do modal (manda um código pelo WhatsApp)</li>
+              <li>Volta no app, coloca seu número e clica em <b>"Salvar tudo"</b></li>
+            </ol>
+            Em breve teremos número oficial WhatsApp Business — aí a ativação será automática.
+          </>
+        ),
       },
       {
         q: 'O que posso fazer pelo WhatsApp?',

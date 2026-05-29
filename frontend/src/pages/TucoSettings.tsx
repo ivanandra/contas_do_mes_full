@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MessageCircle, Heart, Zap, Meh, Save, Smartphone, Mail } from 'lucide-react'
+import { MessageCircle, Heart, Zap, Meh, Save, Smartphone, Mail, HelpCircle, AlertTriangle } from 'lucide-react'
 import api from '@/services/api'
 import { useAuthStore } from '@/store/auth'
 import type { TucoTone, EmailReportFrequency } from '@/types'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+import ActivateWhatsAppModal from '@/components/Modal/ActivateWhatsApp'
 
 const EMAIL_FREQ_OPTIONS: { value: EmailReportFrequency; label: string; desc: string; emoji: string }[] = [
   { value: 'NONE',    label: 'Nenhum',  desc: 'Não receber emails',                       emoji: '🚫' },
@@ -55,6 +56,7 @@ export default function TucoSettings() {
   const [loading, setLoading] = useState(false)
   const [previewMsg, setPreviewMsg] = useState('')
   const [loadingPreview, setLoadingPreview] = useState(false)
+  const [showActivateModal, setShowActivateModal] = useState(false)
 
   useEffect(() => { loadSettings() }, [])
 
@@ -232,13 +234,36 @@ export default function TucoSettings() {
 
       {/* WhatsApp */}
       <div className="card p-6 space-y-4">
-        <div className="flex items-center gap-2">
-          <Smartphone size={20} className="text-brand" />
-          <h3 className="font-bold text-white">Vincular WhatsApp</h3>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Smartphone size={20} className="text-brand" />
+            <h3 className="font-bold text-white">Vincular WhatsApp</h3>
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded-full">
+              Beta
+            </span>
+          </div>
+          <button
+            onClick={() => setShowActivateModal(true)}
+            className="inline-flex items-center gap-1.5 text-xs text-brand hover:text-brand-300 transition-colors"
+          >
+            <HelpCircle size={14} />
+            Como ativar?
+          </button>
         </div>
+
+        {/* Aviso BETA */}
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3.5 flex items-start gap-2.5">
+          <AlertTriangle size={16} className="text-yellow-300 shrink-0 mt-0.5" />
+          <div className="text-xs text-yellow-100 leading-relaxed">
+            <b>Importante:</b> antes de salvar seu número aqui, você precisa <b>ativar o Tuco no WhatsApp</b> mandando um código de confirmação.{' '}
+            <button onClick={() => setShowActivateModal(true)} className="text-yellow-300 underline font-semibold hover:text-yellow-200">
+              Ver passo a passo
+            </button>
+          </div>
+        </div>
+
         <p className="text-sm text-dark-800">
-          Cadastre seu número para usar o Tuco pelo WhatsApp.
-          Depois de salvar, mande qualquer mensagem para o número do Tuco para ativar.
+          Depois de ativar, cole seu número abaixo e o Tuco vai responder pelo WhatsApp.
         </p>
         <input
           type="tel"
@@ -248,12 +273,12 @@ export default function TucoSettings() {
           className="input-field w-full"
         />
         <div className="bg-dark-300 rounded-xl p-3 text-xs text-dark-800">
-          <p className="font-medium text-white mb-1">Como usar pelo WhatsApp:</p>
+          <p className="font-medium text-white mb-1">Exemplos do que mandar pelo Tuco:</p>
           <ul className="space-y-1 list-disc pl-4">
-            <li>Registrar gasto: <span className="text-brand font-mono">Mercado: 150</span></li>
-            <li>Ver hoje: <span className="text-brand font-mono">quanto gastei hoje?</span></li>
-            <li>Resumo: <span className="text-brand font-mono">resumo do mês</span></li>
-            <li>Saldo: <span className="text-brand font-mono">qual meu saldo?</span></li>
+            <li>Gasto avulso: <span className="text-brand font-mono">Mercado 150 pix</span></li>
+            <li>Fiado: <span className="text-brand font-mono">marquei 30 no mercado</span></li>
+            <li>Consulta: <span className="text-brand font-mono">quanto gastei hoje?</span></li>
+            <li>Múltiplos: <span className="text-brand font-mono">Mercado 100 e Uber 30</span></li>
           </ul>
         </div>
       </div>
@@ -303,6 +328,8 @@ export default function TucoSettings() {
         <Save size={18} />
         {loading ? 'Salvando...' : 'Salvar tudo'}
       </button>
+
+      {showActivateModal && <ActivateWhatsAppModal onClose={() => setShowActivateModal(false)} />}
     </div>
   )
 }

@@ -48,8 +48,8 @@ const STEPS: Step[] = [
     title: '3. Vincula teu WhatsApp',
     body: (
       <>
-        Na mesma página, vincula teu número e usa o Tuco direto no WhatsApp.<br /><br />
-        Manda <code className="text-brand">Mercado 150 pix</code> ou pergunta <code className="text-brand">quanto gastei hoje?</code>. Simples assim.
+        Na mesma página, na seção <b>"Vincular WhatsApp"</b>, clica em <b>"Como ativar?"</b> e segue 3 passinhos.<br /><br />
+        Depois manda <code className="text-brand">Mercado 150 pix</code> ou pergunta <code className="text-brand">quanto gastei hoje?</code>. 🚧 <i>Fase beta — em breve será automático.</i>
       </>
     ),
   },
