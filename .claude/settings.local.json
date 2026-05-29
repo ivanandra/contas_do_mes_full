@@ -32,7 +32,15 @@
       "Bash(findstr \"IPv4\")",
       "Bash(C:\\\\contas_do_mes_full\\\\backend\\\\venv\\\\Scripts\\\\python.exe -c \"import ast, sys; ast.parse\\(open\\('app/routers/whatsapp.py'\\).read\\(\\)\\); print\\('whatsapp.py OK'\\); ast.parse\\(open\\('app/services/tuco_service.py'\\).read\\(\\)\\); print\\('tuco_service.py OK'\\)\")",
       "PowerShell(& \"C:\\\\contas_do_mes_full\\\\backend\\\\venv\\\\Scripts\\\\python.exe\" -c \"import ast; ast.parse\\(open\\('C:/contas_do_mes_full/backend/app/routers/whatsapp.py'\\).read\\(\\)\\); print\\('whatsapp.py OK'\\); ast.parse\\(open\\('C:/contas_do_mes_full/backend/app/services/tuco_service.py'\\).read\\(\\)\\); print\\('tuco_service.py OK'\\)\")",
-      "PowerShell(Start-Sleep -Seconds 3; try { $r = Invoke-WebRequest -Uri \"http://localhost:8000/health\" -TimeoutSec 5 -UseBasicParsing; Write-Host \"Backend OK — status $\\($r.StatusCode\\)\" } catch { Write-Host \"Aguardando...\" })"
+      "PowerShell(Start-Sleep -Seconds 3; try { $r = Invoke-WebRequest -Uri \"http://localhost:8000/health\" -TimeoutSec 5 -UseBasicParsing; Write-Host \"Backend OK — status $\\($r.StatusCode\\)\" } catch { Write-Host \"Aguardando...\" })",
+      "Bash(git -C C:/contas_do_mes_full add backend/migrate.py)",
+      "Bash(git -C C:/contas_do_mes_full commit -m ' *)",
+      "Bash(git -C C:/contas_do_mes_full push origin master)",
+      "Bash(curl -sS -o /tmp/health.json -w \"Status: %{http_code}\\\\nTempo: %{time_total}s\\\\n\" https://contasdomesfull-production.up.railway.app/api/health)",
+      "Read(//tmp/**)",
+      "Bash(curl -sS https://contas-do-mes-full.vercel.app/assets/index-Clv3MVol.js)",
+      "Bash(curl -sS https://contas-do-mes-full.vercel.app/assets/index-Clv3MVol.js -o /tmp/bundle.js)",
+      "Bash(curl -sS -o /tmp/health.json -w \"Status: %{http_code}\\\\nTempo: %{time_total}s\\\\n\" https://api.contasdomes.com.br/api/health)"
     ]
   }
 }
