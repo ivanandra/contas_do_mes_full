@@ -37,6 +37,10 @@ migrations = [
     # Relatório por email no Tuco
     "ALTER TABLE tuco_settings ADD COLUMN IF NOT EXISTS email_report_frequency emailreportfrequency NOT NULL DEFAULT 'NONE'",
     "ALTER TABLE tuco_settings ADD COLUMN IF NOT EXISTS email_report_last_sent_at TIMESTAMP",
+    # Renda mensal
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS monthly_income FLOAT",
+    # Onboarding
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS tour_completed BOOLEAN NOT NULL DEFAULT false",
 ]
 
 with engine.connect() as conn:

@@ -20,3 +20,4 @@ stripe>=7.0.0
 apscheduler>=3.10.0
 resend>=0.7.0
 pytz>=2024.1
+google-auth>=2.20.0

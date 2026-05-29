@@ -4,6 +4,7 @@ import api from '@/services/api'
 import type { Account, ShoppingItem } from '@/types'
 import { formatCurrency } from '@/types'
 import toast from 'react-hot-toast'
+import { MoneyInput } from '@/components/Input/MoneyInput'
 
 export default function AddShoppingModal({
   account,
@@ -18,7 +19,7 @@ export default function AddShoppingModal({
   onSuccess: () => void
   onDeleteItem: (id: string) => void
 }) {
-  const [value, setValue] = useState('')
+  const [value, setValue] = useState<number | undefined>(undefined)
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -27,13 +28,12 @@ export default function AddShoppingModal({
   const percent = limit > 0 ? (currentValue / limit) * 100 : 0
 
   async function handleAdd() {
-    const numValue = parseFloat(value)
-    if (!numValue || numValue <= 0) return toast.error('Informe o valor')
+    if (!value || value <= 0) return toast.error('Informe o valor')
 
     setLoading(true)
     try {
       await api.post(`/accounts/${account.id}/shopping`, {
-        value: numValue,
+        value: value,
         description: description || undefined,
       })
 
@@ -44,7 +44,7 @@ export default function AddShoppingModal({
         'Registrado! O Tuco aprova... talvez. 😏',
       ]
       toast.success(jokes[Math.floor(Math.random() * jokes.length)])
-      setValue('')
+      setValue(undefined)
       setDescription('')
       onSuccess()
     } catch (err: any) {
@@ -94,15 +94,8 @@ export default function AddShoppingModal({
             <h4 className="font-semibold text-white text-sm">Adicionar item</h4>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="label">Valor (R$)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  placeholder="0,00"
-                  className="input-field"
-                />
+                <label className="label">Valor</label>
+                <MoneyInput value={value} onChange={setValue} />
               </div>
               <div>
                 <label className="label">Descrição</label>

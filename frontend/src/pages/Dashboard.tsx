@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   TrendingUp, TrendingDown, Wallet, AlertTriangle,
-  CreditCard, BarChart3, ArrowRight, CheckCircle, ShoppingBag,
+  CreditCard, BarChart3, ArrowRight, CheckCircle, ShoppingBag, Banknote, Pencil, Check,
 } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import api from '@/services/api'
@@ -11,6 +11,7 @@ import type { AccountsSummary, Account } from '@/types'
 import { formatCurrency, MONTH_NAMES } from '@/types'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
+import { MoneyInput } from '@/components/Input/MoneyInput'
 
 const PIE_COLOR_MAP: Record<string, string> = {
   'Fixas':         '#7EC243', // verde brand
@@ -20,10 +21,13 @@ const PIE_COLOR_MAP: Record<string, string> = {
 }
 
 export default function Dashboard() {
-  const user = useAuthStore((s) => s.user)
+  const { user, updateUser } = useAuthStore()
   const [summary, setSummary] = useState<AccountsSummary | null>(null)
   const [lateAccounts, setLateAccounts] = useState<Account[]>([])
   const [loading, setLoading] = useState(true)
+  const [editingIncome, setEditingIncome] = useState(false)
+  const [incomeValue, setIncomeValue] = useState<number | undefined>(user?.monthly_income ?? undefined)
+  const [savingIncome, setSavingIncome] = useState(false)
 
   const today = new Date()
 
@@ -48,6 +52,21 @@ export default function Dashboard() {
       toast.error('Erro ao carregar dados')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function saveIncome() {
+    setSavingIncome(true)
+    try {
+      const res = await api.put('/auth/me', { monthly_income: incomeValue ?? 0 })
+      updateUser(res.data)
+      toast.success('Renda mensal atualizada! 💰')
+      setEditingIncome(false)
+      loadData()
+    } catch {
+      toast.error('Erro ao salvar')
+    } finally {
+      setSavingIncome(false)
     }
   }
 
@@ -116,6 +135,50 @@ export default function Dashboard() {
           <CheckCircle size={16} />
           Fechar mês
         </button>
+      </div>
+
+      {/* Renda mensal / Saldo disponível */}
+      <div className="card p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 bg-brand/10 rounded-xl flex items-center justify-center text-brand shrink-0">
+              <Banknote size={20} />
+            </div>
+            <div>
+              <p className="text-xs text-dark-800 uppercase tracking-wider font-medium">Renda mensal</p>
+              {editingIncome ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <MoneyInput value={incomeValue} onChange={setIncomeValue} />
+                  <button onClick={saveIncome} disabled={savingIncome} className="btn-primary px-3 py-1.5 text-xs">
+                    <Check size={14} />
+                  </button>
+                </div>
+              ) : (
+                <p className="font-bold text-white text-lg">
+                  {summary?.monthly_income ? formatCurrency(summary.monthly_income) : (
+                    <span className="text-dark-700 text-sm font-normal italic">Não informada</span>
+                  )}
+                </p>
+              )}
+            </div>
+          </div>
+          {!editingIncome && (
+            <button
+              onClick={() => { setIncomeValue(summary?.monthly_income ?? undefined); setEditingIncome(true) }}
+              className="text-xs text-dark-800 hover:text-white flex items-center gap-1.5"
+            >
+              <Pencil size={13} /> {summary?.monthly_income ? 'Editar' : 'Informar'}
+            </button>
+          )}
+        </div>
+        {summary?.saldo_disponivel !== null && summary?.saldo_disponivel !== undefined && (
+          <div className="mt-4 pt-4 border-t border-dark-400 flex items-center justify-between">
+            <p className="text-sm text-dark-800">Saldo disponível (após contas e gastos)</p>
+            <p className={`font-bold text-lg ${summary.saldo_disponivel >= 0 ? 'text-brand' : 'text-red-400'}`}>
+              {formatCurrency(summary.saldo_disponivel)}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Late accounts alert */}

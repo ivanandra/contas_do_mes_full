@@ -5,6 +5,7 @@ import type { Expense } from '@/types'
 import { formatCurrency, MONTH_NAMES } from '@/types'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
+import { MoneyInput } from '@/components/Input/MoneyInput'
 
 const METHOD_LABELS: Record<string, string> = {
   PIX: 'PIX',
@@ -27,7 +28,9 @@ export default function Expenses() {
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState({ description: '', amount: '', method: '', category: '', notes: '' })
+  const [form, setForm] = useState<{
+    description: string; amount: number | undefined; method: string; category: string; notes: string
+  }>({ description: '', amount: undefined, method: '', category: '', notes: '' })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => { loadExpenses() }, [filterMonth, filterYear])
@@ -45,12 +48,13 @@ export default function Expenses() {
   }
 
   async function handleAdd() {
-    if (!form.description || !form.amount) return toast.error('Descrição e valor são obrigatórios')
+    if (!form.description || !form.amount || form.amount <= 0)
+      return toast.error('Descrição e valor são obrigatórios')
     setSaving(true)
     try {
       const payload = {
         description: form.description,
-        amount: parseFloat(form.amount.replace(',', '.')),
+        amount: form.amount,
         method: form.method || null,
         category: form.category || null,
         notes: form.notes || null,
@@ -62,7 +66,7 @@ export default function Expenses() {
         await api.post('/expenses', payload)
         toast.success('Gasto registrado!')
       }
-      setForm({ description: '', amount: '', method: '', category: '', notes: '' })
+      setForm({ description: '', amount: undefined, method: '', category: '', notes: '' })
       setEditingId(null)
       setShowForm(false)
       loadExpenses()
@@ -77,7 +81,7 @@ export default function Expenses() {
     setEditingId(expense.id)
     setForm({
       description: expense.description,
-      amount: String(expense.amount).replace('.', ','),
+      amount: expense.amount,
       method: expense.method ?? '',
       category: expense.category ?? '',
       notes: expense.notes ?? '',
@@ -87,7 +91,7 @@ export default function Expenses() {
 
   function cancelEdit() {
     setEditingId(null)
-    setForm({ description: '', amount: '', method: '', category: '', notes: '' })
+    setForm({ description: '', amount: undefined, method: '', category: '', notes: '' })
     setShowForm(false)
   }
 
@@ -169,12 +173,10 @@ export default function Expenses() {
               />
             </div>
             <div>
-              <label className="label">Valor (R$) *</label>
-              <input
-                className="input-field"
-                placeholder="0,00"
+              <label className="label">Valor *</label>
+              <MoneyInput
                 value={form.amount}
-                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                onChange={(v) => setForm({ ...form, amount: v })}
               />
             </div>
             <div>

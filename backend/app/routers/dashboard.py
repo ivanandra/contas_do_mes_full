@@ -50,6 +50,11 @@ def get_summary(
         Expense.year == now.year,
     ).with_entities(__import__('sqlalchemy').func.sum(Expense.amount)).scalar() or 0.0
 
+    monthly_income = current_user.monthly_income
+    saldo_disponivel = None
+    if monthly_income is not None and monthly_income > 0:
+        saldo_disponivel = round(monthly_income - total_value - float(total_expenses), 2)
+
     return AccountsSummary(
         total_monthly=round(total_monthly, 2),
         total_dynamic=round(total_dynamic, 2),
@@ -59,6 +64,8 @@ def get_summary(
         resting_value=round(max(0.0, total_value - total_paid), 2),
         late_count=late_count,
         total_expenses=round(float(total_expenses), 2),
+        monthly_income=monthly_income,
+        saldo_disponivel=saldo_disponivel,
     )
 
 

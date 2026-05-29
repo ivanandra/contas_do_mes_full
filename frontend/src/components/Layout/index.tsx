@@ -1,10 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
+import Tour from '@/components/Onboarding/Tour'
+import { useAuthStore } from '@/store/auth'
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [showTour, setShowTour] = useState(false)
+  const user = useAuthStore((s) => s.user)
+
+  useEffect(() => {
+    if (user && user.tour_completed === false) {
+      setShowTour(true)
+    }
+  }, [user])
 
   return (
     <div className="flex h-screen bg-dark overflow-hidden">
@@ -24,6 +34,8 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      {showTour && <Tour onClose={() => setShowTour(false)} />}
     </div>
   )
 }

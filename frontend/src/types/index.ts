@@ -11,6 +11,8 @@ export interface User {
   whatsapp_phone?: string
   avatar_url?: string
   plan: SubscriptionPlan
+  monthly_income?: number | null
+  tour_completed?: boolean
   created_at: string
 }
 
@@ -106,6 +108,8 @@ export interface AccountsSummary {
   resting_value: number
   late_count: number
   total_expenses: number
+  monthly_income?: number | null
+  saldo_disponivel?: number | null
 }
 
 export interface MonthResume {

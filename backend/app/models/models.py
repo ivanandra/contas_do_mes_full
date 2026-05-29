@@ -63,6 +63,8 @@ class User(Base):
     plan_expires_at = Column(DateTime, nullable=True)
     tuco_monthly_interactions = Column(Integer, default=0)
     tuco_interactions_reset_at = Column(DateTime, nullable=True)
+    monthly_income = Column(Float, nullable=True)  # Renda mensal informada pelo usuário
+    tour_completed = Column(Boolean, default=False, nullable=False)  # Onboarding visto?
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = ""
     RESEND_FROM_EMAIL: str = "Tuco <tuco@contasdomes.com.br>"
 
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str = ""
+
     # App
     APP_NAME: str = "Contas do Mês"
     FRONTEND_URL: str = "http://localhost:5173"

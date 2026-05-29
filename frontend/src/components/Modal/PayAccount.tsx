@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { X, DollarSign } from 'lucide-react'
+import { X } from 'lucide-react'
 import api from '@/services/api'
 import type { Account } from '@/types'
 import { formatCurrency } from '@/types'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
+import { MoneyInput } from '@/components/Input/MoneyInput'
 
 export default function PayAccountModal({
   account,
@@ -21,7 +22,7 @@ export default function PayAccountModal({
     account.installment_account?.installment_value ??
     0
 
-  const [value, setValue] = useState(
+  const [value, setValue] = useState<number | undefined>(
     account.resting_value > 0 ? account.resting_value : totalValue
   )
   const [method, setMethod] = useState('')
@@ -29,12 +30,13 @@ export default function PayAccountModal({
 
   async function handlePay() {
     if (!value || value <= 0) return toast.error('Informe o valor')
+    const v = value
 
-    const isPartial = value < totalValue
+    const isPartial = v < totalValue
     if (isPartial) {
       const result = await Swal.fire({
         title: 'Pagamento parcial?',
-        html: `Você vai pagar <strong style="color:#7EC243">${formatCurrency(value)}</strong> de <strong>${formatCurrency(totalValue)}</strong>.<br><br>O Tuco vai anotar como parcial. 😤`,
+        html: `Você vai pagar <strong style="color:#7EC243">${formatCurrency(v)}</strong> de <strong>${formatCurrency(totalValue)}</strong>.<br><br>O Tuco vai anotar como parcial. 😤`,
         showCancelButton: true,
         confirmButtonText: 'Confirmar parcial',
         cancelButtonText: 'Cancelar',
@@ -58,9 +60,9 @@ export default function PayAccountModal({
     setLoading(true)
     try {
       await api.post(`/accounts/${account.id}/pay`, null, {
-        params: { value_paid: value, payment_method: method || undefined },
+        params: { value_paid: v, payment_method: method || undefined },
       })
-      toast.success(`Pagamento de ${formatCurrency(value)} registrado! 💰`)
+      toast.success(`Pagamento de ${formatCurrency(v)} registrado! 💰`)
       onSuccess()
     } catch (err: any) {
       toast.error(err.response?.data?.detail ?? 'Erro ao registrar pagamento')
@@ -87,18 +89,9 @@ export default function PayAccountModal({
           </div>
 
           <div>
-            <label className="label">Valor a pagar (R$)</label>
-            <div className="relative">
-              <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-700" />
-              <input
-                type="number"
-                step="0.01"
-                value={value}
-                onChange={(e) => setValue(Number(e.target.value))}
-                className="input-field pl-9"
-              />
-            </div>
-            {value < totalValue && value > 0 && (
+            <label className="label">Valor a pagar</label>
+            <MoneyInput value={value} onChange={setValue} />
+            {value !== undefined && value < totalValue && value > 0 && (
               <p className="text-yellow-400 text-xs mt-1">
                 Pagamento parcial — resta {formatCurrency(totalValue - value)}
               </p>

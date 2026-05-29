@@ -3,14 +3,19 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { DollarSign, Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { DollarSign, Eye, EyeOff, ArrowRight, Check, X as XIcon } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import toast from 'react-hot-toast'
 
 const schema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
   email: z.string().email('E-mail inválido'),
-  password: z.string().min(6, 'Mínimo 6 caracteres'),
+  password: z.string()
+    .min(8, 'Mínimo 8 caracteres')
+    .regex(/[a-z]/, 'Precisa de uma letra minúscula')
+    .regex(/[A-Z]/, 'Precisa de uma letra maiúscula')
+    .regex(/[0-9]/, 'Precisa de um número')
+    .regex(/[^A-Za-z0-9]/, 'Precisa de um caractere especial (!@#$...)'),
   confirm: z.string(),
 }).refine((d) => d.password === d.confirm, {
   message: 'As senhas não coincidem',
@@ -18,15 +23,24 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
+const PASSWORD_RULES = [
+  { label: 'Pelo menos 8 caracteres',      test: (p: string) => p.length >= 8 },
+  { label: 'Uma letra maiúscula',          test: (p: string) => /[A-Z]/.test(p) },
+  { label: 'Uma letra minúscula',          test: (p: string) => /[a-z]/.test(p) },
+  { label: 'Um número',                    test: (p: string) => /[0-9]/.test(p) },
+  { label: 'Um caractere especial (!@#$)', test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+]
+
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const register_fn = useAuthStore((s) => s.register)
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
+  const passwordValue = watch('password') ?? ''
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
@@ -85,7 +99,7 @@ export default function Register() {
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Senha forte"
                 className="input-field pr-12"
                 {...register('password')}
               />
@@ -97,7 +111,20 @@ export default function Register() {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>}
+            {passwordValue && (
+              <ul className="mt-2 space-y-1">
+                {PASSWORD_RULES.map((rule) => {
+                  const ok = rule.test(passwordValue)
+                  return (
+                    <li key={rule.label} className={`flex items-center gap-1.5 text-xs ${ok ? 'text-brand' : 'text-dark-700'}`}>
+                      {ok ? <Check size={12} /> : <XIcon size={12} />}
+                      {rule.label}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+            {!passwordValue && errors.password && <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>}
           </div>
 
           <div>

@@ -8,8 +8,27 @@ from app.models.models import AccountType, PaidStatus, TucoTone, SubscriptionPla
 
 class UserRegister(BaseModel):
     email: EmailStr
-    password: str = Field(..., min_length=6)
+    password: str = Field(..., min_length=8)
     name: str = Field(..., min_length=2)
+
+    @classmethod
+    def _validate_strong_password(cls, v: str) -> str:
+        import re
+        if len(v) < 8:
+            raise ValueError("Senha precisa de pelo menos 8 caracteres")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Senha precisa de uma letra minúscula")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Senha precisa de uma letra maiúscula")
+        if not re.search(r"[0-9]", v):
+            raise ValueError("Senha precisa de um número")
+        if not re.search(r"[^A-Za-z0-9]", v):
+            raise ValueError("Senha precisa de um caractere especial")
+        return v
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        UserRegister._validate_strong_password(self.password)
 
 
 class UserLogin(BaseModel):
@@ -17,10 +36,16 @@ class UserLogin(BaseModel):
     password: str
 
 
+class GoogleLogin(BaseModel):
+    credential: str  # ID token retornado pelo Google Sign-In
+
+
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     whatsapp_phone: Optional[str] = None
     avatar_url: Optional[str] = None
+    monthly_income: Optional[float] = None
+    tour_completed: Optional[bool] = None
 
 
 class UserOut(BaseModel):
@@ -30,6 +55,8 @@ class UserOut(BaseModel):
     whatsapp_phone: Optional[str]
     avatar_url: Optional[str]
     plan: SubscriptionPlan = SubscriptionPlan.FREE
+    monthly_income: Optional[float] = None
+    tour_completed: bool = False
     created_at: datetime
 
     class Config:
@@ -256,6 +283,8 @@ class AccountsSummary(BaseModel):
     resting_value: float
     late_count: int
     total_expenses: float = 0.0
+    monthly_income: Optional[float] = None
+    saldo_disponivel: Optional[float] = None  # income - total_value - total_expenses
 
 
 class ResumeOut(BaseModel):

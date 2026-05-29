@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -6,6 +6,9 @@ import { z } from 'zod'
 import { DollarSign, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import toast from 'react-hot-toast'
+import { GoogleOAuthProvider } from '@react-oauth/google'
+import { GoogleButton } from '@/components/Auth/GoogleButton'
+import api from '@/services/api'
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -16,12 +19,30 @@ type FormData = z.infer<typeof schema>
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [googleClientId, setGoogleClientId] = useState<string>('')
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
+  const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle)
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
+
+  useEffect(() => {
+    api.get('/auth/google/config').then((r) => {
+      if (r.data.enabled) setGoogleClientId(r.data.client_id)
+    }).catch(() => {})
+  }, [])
+
+  async function handleGoogleSuccess(accessToken: string) {
+    try {
+      await loginWithGoogle(accessToken)
+      toast.success('Bem-vindo! 🎉')
+      navigate('/dashboard')
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Erro no login com Google')
+    }
+  }
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
@@ -60,7 +81,7 @@ export default function Login() {
           <div className="mt-10 space-y-4">
             {[
               { emoji: '💬', text: 'Registra tudo pelo WhatsApp' },
-              { emoji: '🧠', text: 'O Tuco entende até print confuso do Nubank' },
+              { emoji: '🧠', text: 'O Tuco entende até print confuso de certos bancos' },
               { emoji: '😎', text: 'Responde com sarcasmo e amor' },
               { emoji: '📊', text: 'Resumo que até contador ia se orgulhar' },
             ].map((item) => (
@@ -133,6 +154,23 @@ export default function Login() {
               )}
             </button>
           </form>
+
+          {/* Google Sign-In */}
+          {googleClientId && (
+            <>
+              <div className="flex items-center gap-3 my-6">
+                <div className="flex-1 h-px bg-dark-400" />
+                <span className="text-xs text-dark-700 uppercase tracking-wider">ou</span>
+                <div className="flex-1 h-px bg-dark-400" />
+              </div>
+              <GoogleOAuthProvider clientId={googleClientId}>
+                <GoogleButton
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => toast.error('Erro no login com Google')}
+                />
+              </GoogleOAuthProvider>
+            </>
+          )}
 
           <p className="text-center text-dark-800 mt-6 text-sm">
             Novo por aqui?{' '}

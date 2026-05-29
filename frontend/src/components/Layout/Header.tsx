@@ -14,6 +14,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/summary': { title: 'Histórico Mensal', subtitle: 'Fechamentos por mês' },
   '/tuco': { title: 'Configurar Tuco', subtitle: 'Personalize seu assistente' },
   '/planos': { title: 'Planos', subtitle: 'Gratuito, Pro e Pro Anual' },
+  '/faq': { title: 'FAQ', subtitle: 'Perguntas frequentes' },
 }
 
 export default function Header({ onMenuClick }: HeaderProps) {

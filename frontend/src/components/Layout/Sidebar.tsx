@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, CreditCard, Receipt, BarChart3,
-  MessageCircle, LogOut, DollarSign, ShoppingBag, X, Zap,
+  MessageCircle, LogOut, DollarSign, ShoppingBag, X, Zap, HelpCircle,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import clsx from 'clsx'
@@ -19,6 +19,7 @@ const navItems = [
   { to: '/summary', icon: BarChart3, label: 'Histórico' },
   { to: '/tuco', icon: MessageCircle, label: 'Config. Tuco' },
   { to: '/planos', icon: Zap, label: 'Planos' },
+  { to: '/faq', icon: HelpCircle, label: 'FAQ' },
 ]
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {

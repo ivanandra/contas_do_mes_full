@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { X, CreditCard, Zap, Layers } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import api from '@/services/api'
 import type { AccountType, Account } from '@/types'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+import { MoneyInput } from '@/components/Input/MoneyInput'
+import { IntInput } from '@/components/Input/IntInput'
 
 // Converte NaN (valor de input vazio com valueAsNumber:true) em undefined antes do zod validar
 const nanToUndef = (v: unknown) =>
@@ -62,7 +64,7 @@ export default function CreateAccountModal({
 }) {
   const isEdit = !!account
   const [loading, setLoading] = useState(false)
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, watch, setValue, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: getDefaults(account),
   })
@@ -186,14 +188,16 @@ export default function CreateAccountModal({
           {accountType === 'MONTHLY' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="label">Valor (R$)</label>
-                <input type="number" step="0.01" placeholder="0,00" className="input-field"
-                  {...register('value', { valueAsNumber: true })} />
+                <label className="label">Valor</label>
+                <Controller name="value" control={control} render={({ field }) => (
+                  <MoneyInput value={field.value} onChange={field.onChange} />
+                )} />
               </div>
               <div>
                 <label className="label">Dia do vencimento</label>
-                <input type="number" min={1} max={31} placeholder="10" className="input-field"
-                  {...register('due_date', { valueAsNumber: true })} />
+                <Controller name="due_date" control={control} render={({ field }) => (
+                  <IntInput value={field.value} onChange={field.onChange} min={1} max={31} placeholder="10" />
+                )} />
               </div>
             </div>
           )}
@@ -201,14 +205,16 @@ export default function CreateAccountModal({
           {accountType === 'DYNAMIC' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="label">Limite (R$)</label>
-                <input type="number" step="0.01" placeholder="0,00" className="input-field"
-                  {...register('limit_value', { valueAsNumber: true })} />
+                <label className="label">Limite</label>
+                <Controller name="limit_value" control={control} render={({ field }) => (
+                  <MoneyInput value={field.value} onChange={field.onChange} />
+                )} />
               </div>
               <div>
                 <label className="label">Dia do vencimento</label>
-                <input type="number" min={1} max={31} placeholder="10" className="input-field"
-                  {...register('due_date', { valueAsNumber: true })} />
+                <Controller name="due_date" control={control} render={({ field }) => (
+                  <IntInput value={field.value} onChange={field.onChange} min={1} max={31} placeholder="10" />
+                )} />
               </div>
             </div>
           )}
@@ -216,19 +222,22 @@ export default function CreateAccountModal({
           {accountType === 'INSTALLMENT' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="label">Valor total (R$)</label>
-                <input type="number" step="0.01" placeholder="0,00" className="input-field"
-                  {...register('total_value', { valueAsNumber: true })} />
+                <label className="label">Valor total</label>
+                <Controller name="total_value" control={control} render={({ field }) => (
+                  <MoneyInput value={field.value} onChange={field.onChange} />
+                )} />
               </div>
               <div>
                 <label className="label">Nº de parcelas</label>
-                <input type="number" min={1} placeholder="12" className="input-field"
-                  {...register('number_of_installments', { valueAsNumber: true })} />
+                <Controller name="number_of_installments" control={control} render={({ field }) => (
+                  <IntInput value={field.value} onChange={field.onChange} min={1} placeholder="12" />
+                )} />
               </div>
               <div>
                 <label className="label">Dia do vencimento</label>
-                <input type="number" min={1} max={31} placeholder="10" className="input-field"
-                  {...register('due_date', { valueAsNumber: true })} />
+                <Controller name="due_date" control={control} render={({ field }) => (
+                  <IntInput value={field.value} onChange={field.onChange} min={1} max={31} placeholder="10" />
+                )} />
               </div>
             </div>
           )}

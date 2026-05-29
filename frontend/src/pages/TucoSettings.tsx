@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MessageCircle, Heart, Zap, Meh, Save, Smartphone, Mail } from 'lucide-react'
 import api from '@/services/api'
 import { useAuthStore } from '@/store/auth'
@@ -43,6 +44,7 @@ const ZOEIRA_LEVELS = [
 ]
 
 export default function TucoSettings() {
+  const navigate = useNavigate()
   const { user, updateUser } = useAuthStore()
   const [tone, setTone] = useState<TucoTone>('NEUTRO')
   const [zoeira, setZoeira] = useState(2)
@@ -51,7 +53,6 @@ export default function TucoSettings() {
   const [emailFreq, setEmailFreq] = useState<EmailReportFrequency>('NONE')
   const [phone, setPhone] = useState(user?.whatsapp_phone ?? '')
   const [loading, setLoading] = useState(false)
-  const [savingPhone, setSavingPhone] = useState(false)
   const [previewMsg, setPreviewMsg] = useState('')
   const [loadingPreview, setLoadingPreview] = useState(false)
 
@@ -68,31 +69,27 @@ export default function TucoSettings() {
     } catch {/* usa defaults */}
   }
 
-  async function saveSettings() {
+  async function saveAll() {
     setLoading(true)
     try {
+      // Salva config do Tuco
       await api.put('/dashboard/tuco-settings', {
         tone, zoeira_level: zoeira, tuco_name: name, active,
         email_report_frequency: emailFreq,
       })
-      toast.success('Configurações do Tuco salvas! ✅')
-    } catch {
-      toast.error('Erro ao salvar')
+
+      // Salva número WhatsApp (só se mudou em relação ao user atual)
+      if ((phone || null) !== (user?.whatsapp_phone || null)) {
+        const res = await api.put('/auth/me', { whatsapp_phone: phone || null })
+        updateUser(res.data)
+      }
+
+      toast.success('Tudo salvo! ✅')
+      navigate('/dashboard')
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail ?? 'Erro ao salvar')
     } finally {
       setLoading(false)
-    }
-  }
-
-  async function savePhone() {
-    setSavingPhone(true)
-    try {
-      const res = await api.put('/auth/me', { whatsapp_phone: phone || null })
-      updateUser(res.data)
-      toast.success('Número WhatsApp atualizado! 📱')
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail ?? 'Erro ao salvar número')
-    } finally {
-      setSavingPhone(false)
     }
   }
 
@@ -243,22 +240,13 @@ export default function TucoSettings() {
           Cadastre seu número para usar o Tuco pelo WhatsApp.
           Depois de salvar, mande qualquer mensagem para o número do Tuco para ativar.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="5511999999999 (sem + ou espaços)"
-            className="input-field flex-1"
-          />
-          <button
-            onClick={savePhone}
-            disabled={savingPhone}
-            className="btn-primary px-5 shrink-0"
-          >
-            {savingPhone ? '...' : 'Salvar'}
-          </button>
-        </div>
+        <input
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="5511999999999 (sem + ou espaços)"
+          className="input-field w-full"
+        />
         <div className="bg-dark-300 rounded-xl p-3 text-xs text-dark-800">
           <p className="font-medium text-white mb-1">Como usar pelo WhatsApp:</p>
           <ul className="space-y-1 list-disc pl-4">
@@ -306,14 +294,14 @@ export default function TucoSettings() {
         )}
       </div>
 
-      {/* Save */}
+      {/* Save tudo */}
       <button
-        onClick={saveSettings}
+        onClick={saveAll}
         disabled={loading}
         className="btn-primary w-full flex items-center justify-center gap-2 py-3"
       >
         <Save size={18} />
-        {loading ? 'Salvando...' : 'Salvar configurações do Tuco'}
+        {loading ? 'Salvando...' : 'Salvar tudo'}
       </button>
     </div>
   )
